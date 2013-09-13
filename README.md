@@ -19,7 +19,7 @@ python pareto.py \
 
 * `-o, --output`: Required. Filename to output your Pareto set.
 
-* `--objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted by default.
+* `--objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.
 
 * `--epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
  
@@ -30,7 +30,7 @@ python pareto.py \
 
 * `--precision`: Digits of precision in the output file (optional). Default is 8.
 
-* `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, by default all columns of the input will be printed to the output, even if they were not sorted.
+* `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
 ### License
 Copyright (C) 2013 Jon Herman, Patrick Reed and others. Licensed under the GNU Lesser General Public License.
