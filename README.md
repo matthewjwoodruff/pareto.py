@@ -3,10 +3,10 @@
 
 Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set. Requires [NumPy](http://www.numpy.org/). Files can contain columns other than objectives which are not sorted.
 
-Example usage:
+Example usage for a group of input files beginning with `my_file_`:
 ```
 python pareto.py \
-	   --input my_files* \
+	   --input my_file_* \
 	   --output my_pareto_set.txt \
 	   --objectives 3 5 7 \
 	   --epsilons 0.01 0.05 0.1 \
