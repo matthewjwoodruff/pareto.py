@@ -1,0 +1,13 @@
+Things I'd like to change about Jon's nondom sort:
+
+memorize epsilon boxes
+get rid of globals
+librarify
+multiple input files
+different column spec by input file
+needs -h
+Minimum python version? Maximum python version?
+Minimum numpy version? Maximum numpy version?
+better column spec syntax -- ranges are good
+Change the name of the project in the license text away from SALib
+clarify column numbering (count from one)
