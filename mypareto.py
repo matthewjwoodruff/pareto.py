@@ -48,11 +48,7 @@ class Comparator(object):
 
         dom = nondom(b1, b2)
 
-        if not any([x > 0 for x in dom]):
-            return -1 # r1 dominates r2
-        if not any([x < 0 for x in dom]):
-            return 1 # r1 dominated by r2
-        if all([x == 0 for x in dom]):
+        if all([x == 0 for x in dom]): # same box
             rem1 = self.remainder(b1, o1)
             rem2 = self.remainder(b1, o2)
             sd1 = squared_distance(rem1)
@@ -60,6 +56,10 @@ class Comparator(object):
 #            if secretcounter == magicnumber:
 #                sys.stdout.write("{0} - {1}".format(sd1, sd2))
             return compare(sd1, sd2)
+        if not any([x > 0 for x in dom]):
+            return -1 # r1 dominates r2
+        if not any([x < 0 for x in dom]):
+            return 1 # r1 dominated by r2
         return 0 # r1 and r2 do not dominate each other
 
 def eps_sort(tables, objectives, epsilons):
@@ -73,6 +73,9 @@ def eps_sort(tables, objectives, epsilons):
     for table in tables:
         idominated = 0
         for solution in table.iterrows():
+            if secretcounter % 100 == 99:
+                sys.stdout.write("\n")
+            sys.stdout.write(".")
 #            sys.stdout.write("\narchive size {0}, I dominated {1}\n".format(len(archive), idominated))
             idominated = 0
             secretcounter += 1
@@ -87,6 +90,8 @@ def eps_sort(tables, objectives, epsilons):
             dominated_by_archive = False
             dominated_by_solution = []
             for ii in range(len(archive)):
+                if ii % 10 == 0:
+                    sys.stdout.write(",")
                 comparison = comp.compare(solution, archive[ii])
 #                if secretcounter == magicnumber and False:
 #                    obj = comp.objectives(archive[ii])

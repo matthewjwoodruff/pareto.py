@@ -56,8 +56,8 @@ def compare(solution1, solution2):
       epsilon = args.epsilons[i]
       index1 = math.floor(solution1[args.objectives[i]]/epsilon)
       index2 = math.floor(solution2[args.objectives[i]]/epsilon)
-      dist1 += math.pow(solution1[i] - index1*epsilon, 2.0);
-      dist2 += math.pow(solution2[i] - index2*epsilon, 2.0);
+      dist1 += math.pow(solution1[args.objectives[i]] - index1*epsilon, 2.0);
+      dist2 += math.pow(solution2[args.objectives[i]] - index2*epsilon, 2.0);
 
     if (dist1 < dist2): # compare squared distances
 #      if secretcounter == magicnumber:
