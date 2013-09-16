@@ -24,12 +24,6 @@ def compare(solution1, solution2):
       if dominate1:
         return 0
 
-  # If one clearly dominates the other, return
-  if dominate1:
-    return -1
-  elif dominate2:
-    return 1
-
   # If neither dominates the other in any objective, they are in the same epsilon box
   if not dominate1 and not dominate2:
     dist1 = 0.0
@@ -39,13 +33,17 @@ def compare(solution1, solution2):
       epsilon = args.epsilons[i]
       index1 = math.floor(solution1[args.objectives[i]]/epsilon)
       index2 = math.floor(solution2[args.objectives[i]]/epsilon)
-      dist1 += math.pow(solution1[i] - index1*epsilon, 2.0);
-      dist2 += math.pow(solution2[i] - index2*epsilon, 2.0);
+      dist1 += math.pow(solution1[args.objectives[i]] - index1*epsilon, 2.0);
+      dist2 += math.pow(solution2[args.objectives[i]] - index2*epsilon, 2.0);
 
     if (dist1 < dist2): # compare squared distances
       return -1
     else:
       return 1
+  elif dominate1:
+    return -1
+  else:
+    return 1
 
 # Get command line arguments and check for errors
 parser = argparse.ArgumentParser(description='Nondomination Sort for Multiple Files')
