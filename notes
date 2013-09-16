@@ -6,8 +6,17 @@ librarify
 multiple input files
 different column spec by input file
 needs -h
-Minimum python version? Maximum python version?
+Minimum python version? Maximum python version? <= 3.0 because of print
+	Same behavior with python2 as 3 if I get rid of the prints?
 Minimum numpy version? Maximum numpy version?
 better column spec syntax -- ranges are good
 Change the name of the project in the license text away from SALib
-clarify column numbering (count from one)
+clarify column numbering (count from zero)
+raise exceptions on bad input
+allow an input spec file?
+
+external utility to compare output files
+
+PEP8
+
+clarify that objectives are to be minimized
