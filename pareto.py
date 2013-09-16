@@ -85,7 +85,6 @@ for filename in args.input:
     candidateSolution = solutions[i,:]
     addCandidateSolution = True
     n = len(ParetoSet)
-
     if n == 0:
       ParetoSet.append(candidateSolution)
     else:
