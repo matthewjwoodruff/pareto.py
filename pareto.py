@@ -1,4 +1,5 @@
 from __future__ import division
+import sys
 import numpy as np
 import math
 import argparse
@@ -14,22 +15,38 @@ def compare(solution1, solution2):
     epsilon = args.epsilons[i]
     index1 = math.floor(solution1[args.objectives[i]]/epsilon)
     index2 = math.floor(solution2[args.objectives[i]]/epsilon)
+#    if secretcounter == magicnumber:
+#      sys.stdout.write("({0}, {1}) ".format(index1, index2))
 
     if index1 < index2:
       dominate1 = True
+#      if secretcounter == magicnumber:
+#        sys.stdout.write("l ")
       if dominate2:
+#        if secretcounter == magicnumber:
+#          sys.stdout.write("* ")
         return 0
     elif index1 > index2:
+#      if secretcounter == magicnumber:
+#        sys.stdout.write("g ")
       dominate2 = True
       if dominate1:
+#        if secretcounter == magicnumber:
+#          sys.stdout.write("* ")
         return 0
 
   # If one clearly dominates the other, return
   if dominate1:
+#    if secretcounter == magicnumber:
+#      sys.stdout.write("L ")
     return -1
   elif dominate2:
+#    if secretcounter == magicnumber:
+#      sys.stdout.write("G ")
     return 1
 
+#  if secretcounter == magicnumber:
+#    sys.stdout.write("= ")
   # If neither dominates the other in any objective, they are in the same epsilon box
   if not dominate1 and not dominate2:
     dist1 = 0.0
@@ -43,8 +60,14 @@ def compare(solution1, solution2):
       dist2 += math.pow(solution2[i] - index2*epsilon, 2.0);
 
     if (dist1 < dist2): # compare squared distances
+#      if secretcounter == magicnumber:
+#        sys.stdout.write("{0} - {1}".format(dist1, dist2))
+#        sys.stdout.write("L ")
       return -1
     else:
+#      if secretcounter == magicnumber:
+#        sys.stdout.write("{0} - {1}".format(dist1, dist2))
+#        sys.stdout.write("G ")
       return 1
 
 # Get command line arguments and check for errors
@@ -78,17 +101,27 @@ else:
 # Define ParetoSet (a list of nparrays) and build it from input files
 ParetoSet = []; 
 
+secretcounter = -1
+magicnumber = 70
+
 # for each file in argument list ...
 for filename in args.input:
   solutions = np.loadtxt(filename, delimiter=args.delimiter)
 
   # for each line in file (new candidate solution) ...
+  idominated = 0
   for i in xrange(0, solutions[:,0].size):
+    secretcounter += 1
+#    sys.stdout.write("\narchive size {0}, I dominated {1}\n".format(
+#            len(ParetoSet), idominated))
+    idominated = 0
     candidateSolution = solutions[i,:]
+#    sys.stdout.write("{0}\n".format(" ".join([str(x) for x in candidateSolution])))
     addCandidateSolution = True
     n = len(ParetoSet)
 
     if n == 0:
+#      sys.stdout.write("add {0}\n".format(" ".join([str(x) for x in candidateSolution])))
       ParetoSet.append(candidateSolution)
     else:
       p = 0
@@ -98,6 +131,7 @@ for filename in args.input:
         if flag > 0:
           del ParetoSet[p]
           n = n - 1
+          idominated += 1
         elif flag < 0:
           addCandidateSolution = False
           break
@@ -105,6 +139,7 @@ for filename in args.input:
           p = p + 1
 
       if addCandidateSolution:
+#        sys.stdout.write("add {0}\n".format(" ".join([str(x) for x in candidateSolution])))
         ParetoSet.append(candidateSolution)
 
 # Convert ParetoSet to nparray and print it
