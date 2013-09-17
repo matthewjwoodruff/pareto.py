@@ -1,5 +1,6 @@
 ###pareto.py
 ####Nondominated sorting for multi-objective problems
+by [jdherman](https://github.com/jdherman) and [matthewjwoodruff](https://github.com/matthewjwoodruff)
 
 Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set. Requires [NumPy](http://www.numpy.org/). Files can contain columns other than objectives which are not sorted.
 
@@ -33,7 +34,7 @@ python pareto.py \
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
 ### License
-Copyright (C) 2013 Jon Herman, Patrick Reed and others. Licensed under the GNU Lesser General Public License.
+Copyright (C) 2013 Jon Herman, Matt Woodruff, Patrick Reed and others. Licensed under the GNU Lesser General Public License.
 
 The Sensitivity Analysis Library is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
