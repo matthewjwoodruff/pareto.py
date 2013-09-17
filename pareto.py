@@ -1,4 +1,55 @@
-from __future__ import division
+"""
+Copyright (C) 2013 Jon Herman, Matthew Woodruff, Patrick Reed, and others
+
+This script is free software: you can redistribute it and/or modify
+it under the terms of the GNU Lesser General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This script is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public License
+along with this script. If not, see <http://www.gnu.org/licenses/>.
+===========================================================
+pareto.py
+
+Perform epsilon-nondominated sort on input files.
+
+Please cite the following works if publishing results obtained using this
+script.
+
+For pareto.py:
+
+@misc{herman_woodruff_2013_pareto,
+    author = {Herman, Jon and Woodruff, Matthew},
+    year = {2013},
+    title = {pareto.py: a $\\varepsilon-nondomination$ sorting routine},
+    howpublished = {https://github.com/jdherman/pareto.py}
+}
+
+For epsilon-nondomination:
+@article{deb_2005_emoea,
+    author = { Deb, K. and Mohan, M. and Mishra, S},
+    year = {2005},
+    title = {Evaluating the $\\varepsilon$-domination based multiobjective evolutionary algorithm for a quick computation of Pareto-optimal solutions.},
+    journal = {Evolutionary Computation Journal},
+    volume= {13}, number = {4}, pages ={501--525}
+}
+
+For a fast nondominated sort:
+@article{deb_2002_nsga2,
+    title="A fast and elitist multiobjective genetic algorithm: {NSGA-II}",
+    author="Deb, Kalyanmoy and Pratap, A and Agarwal, S and Meyarivan, T",
+    volume="6", number="2",
+    journal="{IEEE} Transactions on Evolutionary Computation",
+    year="2002",
+    pages="182--197"
+}
+"""
+
 import sys
 import numpy as np
 import math
@@ -37,7 +88,7 @@ class Archive(object):
 
         sobj = [solution[ii] for ii in self.oindices]
         sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
-        
+
         asize = len(self.archive)
 
         ai = -1
@@ -48,7 +99,7 @@ class Archive(object):
             nondominate = False # neither dominates
 
             abox = self.boxes[ai]
-            
+
             for oo in self.itobj:
                 if abox[oo] < sbox[oo]:
                     adominate = True
@@ -60,7 +111,7 @@ class Archive(object):
                     if adominate: # nondomination
                         nondominate = True
                         break # for
-                        
+
             if nondominate:
                 continue # while
             if adominate: # candidate solution was dominated
@@ -71,7 +122,7 @@ class Archive(object):
                 asize -= 1
                 continue # while
 
-            # solutions are in the same box 
+            # solutions are in the same box
             aobj = self.objectives[ai]
             corner = [sbox[ii] * self.epsilons[ii] for ii in self.itobj]
             sdist = sum([(sobj[ii] - corner[ii]) **2 for ii in self.itobj])
@@ -89,7 +140,7 @@ class Archive(object):
 
 # Get command line arguments and check for errors
 parser = argparse.ArgumentParser(description='Nondomination Sort for Multiple Files')
-parser.add_argument('--objectives', type=int, nargs='+', required=False, help='Objective Columns (zero-indexed)') 
+parser.add_argument('--objectives', type=int, nargs='+', required=False, help='Objective Columns (zero-indexed)')
 parser.add_argument('--epsilons', type=float, nargs='+', required=False, help='Epsilons, one per objective')
 parser.add_argument('-o', '--output', type=str, required=True, help='Output Filename')
 parser.add_argument('-i', '--input', type=str, required=True, nargs='+', help='Input filenames')
