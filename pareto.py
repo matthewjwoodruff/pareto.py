@@ -5,70 +5,87 @@ import math
 import argparse
 from sys import exit
 
-# Epsilon box comparison function
-def compare(solution1, solution2):
+class Archive(object):
+    def __init__(self, epsilons, oindices):
+        self.archive = []
+        self.boxes = [] # remember boxes
+        self.objectives = [] # remember objectives
+        self.epsilons = epsilons
+        self.oindices = oindices
+        self.nobj = len(oindices)
+        self.itobj = range(self.nobj)
 
-  dominate1 = False
-  dominate2 = False
+    def add(self, solution, sobj, sbox):
+        self.archive.append(solution)
+        self.objectives.append(sobj)
+        self.boxes.append(sbox)
 
-  for i in xrange(0, len(args.objectives)):
-    epsilon = args.epsilons[i]
-    index1 = math.floor(solution1[args.objectives[i]]/epsilon)
-    index2 = math.floor(solution2[args.objectives[i]]/epsilon)
-#    if secretcounter == magicnumber:
-#      sys.stdout.write("({0}, {1}) ".format(index1, index2))
+    def remove(self, index):
+        self.archive.pop(index)
+        self.objectives.pop(index)
+        self.boxes.pop(index)
 
-    if index1 < index2:
-      dominate1 = True
-#      if secretcounter == magicnumber:
-#        sys.stdout.write("l ")
-      if dominate2:
-#        if secretcounter == magicnumber:
-#          sys.stdout.write("* ")
-        return 0
-    elif index1 > index2:
-#      if secretcounter == magicnumber:
-#        sys.stdout.write("g ")
-      dominate2 = True
-      if dominate1:
-#        if secretcounter == magicnumber:
-#          sys.stdout.write("* ")
-        return 0
+    def sortinto(self, solution):
+        """
+        Sort a solution into the archive.  Add it if it's nondominated
+        w.r.t current solutions.
+        """
+        # this code has a lot of early exits, keep control flow in mind
+        # break -- stop iterating and do not evaluate any more of the loop
+        # continue -- start the next loop iteration immediately
+        # return -- immediately stop executing the function
 
-  # If one clearly dominates the other, return
-  if dominate1:
-#    if secretcounter == magicnumber:
-#      sys.stdout.write("L ")
-    return -1
-  elif dominate2:
-#    if secretcounter == magicnumber:
-#      sys.stdout.write("G ")
-    return 1
+        sobj = [solution[ii] for ii in self.oindices]
+        sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
+        
+        asize = len(self.archive)
 
-#  if secretcounter == magicnumber:
-#    sys.stdout.write("= ")
-  # If neither dominates the other in any objective, they are in the same epsilon box
-  if not dominate1 and not dominate2:
-    dist1 = 0.0
-    dist2 = 0.0
+        ai = -1
+        while ai < asize - 1:
+            ai += 1
+            adominate = False # archive dominates
+            sdominate = False # solution dominates
+            nondominate = False # neither dominates
 
-    for i in xrange(0, len(args.objectives)):
-      epsilon = args.epsilons[i]
-      index1 = math.floor(solution1[args.objectives[i]]/epsilon)
-      index2 = math.floor(solution2[args.objectives[i]]/epsilon)
-      dist1 += math.pow(solution1[args.objectives[i]] - index1*epsilon, 2.0);
-      dist2 += math.pow(solution2[args.objectives[i]] - index2*epsilon, 2.0);
+            abox = self.boxes[ai]
+            
+            for oo in self.itobj:
+                if abox[oo] < sbox[oo]:
+                    adominate = True
+                    if sdominate: # nondomination
+                        nondominate = True
+                        break # for
+                elif abox[oo] > sbox[oo]:
+                    sdominate = True
+                    if adominate: # nondomination
+                        nondominate = True
+                        break # for
+                        
+            if nondominate:
+                continue # while
+            if adominate: # candidate solution was dominated
+                return
+            if sdominate: # candidate solution dominated archive solution
+                self.remove(ai)
+                ai -= 1
+                asize -= 1
+                continue # while
 
-    if (dist1 < dist2): # compare squared distances
-#      if secretcounter == magicnumber:
-#        sys.stdout.write("{0} - {1}".format(dist1, dist2))
-#        sys.stdout.write("L ")
-      return -1
-    else:
-#      if secretcounter == magicnumber:
-#        sys.stdout.write("{0} - {1}".format(dist1, dist2))
-#        sys.stdout.write("G ")
-      return 1
+            # solutions are in the same box 
+            aobj = self.objectives[ai]
+            corner = [sbox[ii] * self.epsilons[ii] for ii in self.itobj]
+            sdist = sum([(sobj[ii] - corner[ii]) **2 for ii in self.itobj])
+            adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
+            if adist < sdist: # archive dominates
+                return
+            else: # solution dominates
+                self.remove(ai)
+                ai -= 1
+                asize -=1
+                continue # while
+
+        # if you get here, then no archive solution has dominated this one
+        self.add(solution, sobj, sbox)
 
 # Get command line arguments and check for errors
 parser = argparse.ArgumentParser(description='Nondomination Sort for Multiple Files')
@@ -89,61 +106,30 @@ if not args.objectives:
   args.objectives = range(tempinput[0,:].size)
 # If given objectives are out of bounds, exit with error
 elif (min(args.objectives) < 0 or max(args.objectives) > tempinput[0,:].size):
-  print "Error: One or more objective values exceed input matrix bounds"
+  msg = "Error: One or more objective values exceed input matrix bounds\n"
+  sys.stdout.write(msg)
   exit()
 if args.epsilons:
   if len(args.epsilons) != len(args.objectives): # make sure number of epsilons matches number of objectives
-    print "Error: Number of epsilon values must match number of objectives."
+    msg =  "Error: Number of epsilon values must match number of objectives.\n"
+    sys.stdout.write(msg)
     exit()
 else:
   args.epsilons = [1e-9]*len(args.objectives) # if epsilons not defined, use 1e-9 for all objectives
 
-# Define ParetoSet (a list of nparrays) and build it from input files
-ParetoSet = []; 
-
-secretcounter = -1
-magicnumber = 70
+archive = Archive(args.epsilons, args.objectives)
 
 # for each file in argument list ...
 for filename in args.input:
   solutions = np.loadtxt(filename, delimiter=args.delimiter)
 
   # for each line in file (new candidate solution) ...
-  idominated = 0
   for i in xrange(0, solutions[:,0].size):
-    secretcounter += 1
-#    sys.stdout.write("\narchive size {0}, I dominated {1}\n".format(
-#            len(ParetoSet), idominated))
-    idominated = 0
     candidateSolution = solutions[i,:]
-#    sys.stdout.write("{0}\n".format(" ".join([str(x) for x in candidateSolution])))
-    addCandidateSolution = True
-    n = len(ParetoSet)
-
-    if n == 0:
-#      sys.stdout.write("add {0}\n".format(" ".join([str(x) for x in candidateSolution])))
-      ParetoSet.append(candidateSolution)
-    else:
-      p = 0
-      while p < n:
-        existingSolution = ParetoSet[p]
-        flag = compare(existingSolution, candidateSolution)
-        if flag > 0:
-          del ParetoSet[p]
-          n = n - 1
-          idominated += 1
-        elif flag < 0:
-          addCandidateSolution = False
-          break
-        else:
-          p = p + 1
-
-      if addCandidateSolution:
-#        sys.stdout.write("add {0}\n".format(" ".join([str(x) for x in candidateSolution])))
-        ParetoSet.append(candidateSolution)
+    archive.sortinto(candidateSolution)
 
 # Convert ParetoSet to nparray and print it
-ParetoSet = np.array(ParetoSet)
+ParetoSet = np.array(archive.archive)
 if args.print_only_objectives:
   ParetoSet = ParetoSet[:, args.objectives]
 np.savetxt(args.output, ParetoSet, delimiter=args.delimiter, fmt='%.' + str(args.precision) + 'e')
