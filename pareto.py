@@ -224,7 +224,7 @@ def cli(args):
         archive = eps_sort(tables, objectives, epsilons)
     except SortInputError as sie:
         table = args.input[sie.table]
-        raise SortInputError(sie.message, sie.row, sie.table)
+        raise SortInputError(sie.message, sie.row, table)
 
     # Convert ParetoSet to nparray and print it
     ParetoSet = np.array(archive.archive)
