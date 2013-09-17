@@ -1,0 +1,3 @@
+[submodule "datacomparison"]
+	path = datacomparison
+	url = git@github.com:matthewjwoodruff/datacomparison
