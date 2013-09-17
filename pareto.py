@@ -172,40 +172,59 @@ def get_args(argv):
                         help='Output floating-point precision')
     return parser.parse_args(argv)
 
+class SortInputError(Exception):
+    """ Information about a defective input """
+    def __init__(self, msg, row, table):
+        super(SortError, self).__init__(msg)
+        self.row = row
+        self.table = table
+
+def eps_sort(tables, objectives, epsilons):
+    archive = Archive(epsilons, objectives)
+
+    # for each file in argument list ...
+    for counter in range(len(tables)):
+        solutions = tables[counter]
+        # for each line in file (new candidate solution) ...
+        for i in xrange(0, solutions[:,0].size):
+            try:
+                candidateSolution = solutions[i,:]
+                archive.sortinto(candidateSolution)
+            except IndexError:
+                msg = "Not enough columns in row {0} of input {1}".format(
+                                                                    i, counter)
+                raise SortInputError(msg, i, counter)
+            except ValueError as ve:
+                msg = "{0} on row {1} of input {2}".format(
+                                                        ve.message, i, counter)
+                raise SortInputError(msg, i, counter)
+
+    return archive.archive
+
 def cli(args):
     """ command-line interface, execute the comparison """
-    # Get the first input file to check size
-    tempinput = np.loadtxt(args.input[0], delimiter=args.delimiter)
-
-    # If objectives not given, use all columns
+    tables = [np.loadtxt(fn, delimiter = args.delimiter) for fn in args.input]
     if args.objectives is None:
-        objectives = range(tempinput[0,:].size)
-    # If given objectives are out of bounds, exit with error
-    elif (min(args.objectives) < 0 or max(args.objectives) > tempinput[0,:].size):
-        msg = "Error: One or more objective values exceed input matrix bounds\n"
-        sys.stdout.write(msg)
-        exit()
+        objectives = range(tables[0][0,:].size)
     else:
         objectives = args.objectives
 
     if args.epsilons:
-        if len(args.epsilons) != len(objectives): # make sure number of epsilons matches number of objectives
-            msg =  "Error: Number of epsilon values must match number of objectives.\n"
+        if len(args.epsilons) != len(objectives):
+            msg =  "Error: Number of epsilon values must match "\
+                   "number of objectives.\n"
             sys.stdout.write(msg)
             exit()
+        epsilons = args.epsilons
     else:
-        args.epsilons = [1e-9]*len(objectives) # if epsilons not defined, use 1e-9 for all objectives
+        # if epsilons not defined, use 1e-9 for all objectives
+        epsilons = [1e-9]*len(objectives) 
 
-    archive = Archive(args.epsilons, objectives)
-
-    # for each file in argument list ...
-    for filename in args.input:
-        solutions = np.loadtxt(filename, delimiter=args.delimiter)
-
-        # for each line in file (new candidate solution) ...
-        for i in xrange(0, solutions[:,0].size):
-            candidateSolution = solutions[i,:]
-            archive.sortinto(candidateSolution)
+    try:
+        archive = eps_sort(tables, objectives, epsilons)
+    except SortInputError as sie:
+        table = args.input[sie.table]
+        raise SortInputError(sie.message, sie.row, sie.table)
 
     # Convert ParetoSet to nparray and print it
     ParetoSet = np.array(archive.archive)
