@@ -199,7 +199,7 @@ def eps_sort(tables, objectives, epsilons):
                                                         ve.message, i, counter)
                 raise SortInputError(msg, i, counter)
 
-    return archive.archive
+    return archive
 
 def cli(args):
     """ command-line interface, execute the comparison """
