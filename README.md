@@ -2,7 +2,7 @@
 ####Nondominated sorting for multi-objective problems
 by [jdherman](https://github.com/jdherman) and [matthewjwoodruff](https://github.com/matthewjwoodruff)
 
-Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set. Requires [NumPy](http://www.numpy.org/). Files can contain columns other than objectives which are not sorted.
+Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set. Requires [NumPy](http://www.numpy.org/). Files can contain columns other than objectives which are not sorted.  `pareto.py` assumes that all objectives are to be minimized.
 
 Example usage for a group of input files beginning with `my_file_`:
 ```
@@ -16,7 +16,7 @@ python pareto.py \
 	   --print-only-objectives
 ```
 
-* `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Lines beginning with `#` are treated as comments. Input files must all contain the same number of columns.
+* `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Lines beginning with `#` are treated as comments. Input files must all contain the same number of columns. 
 
 * `-o, --output`: Required. Filename to output your Pareto set.
 
@@ -47,4 +47,4 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
-along with the Sensitivity Analysis Library.  If not, see <http://www.gnu.org/licenses/>.
+along with the pareto.py.  If not, see <http://www.gnu.org/licenses/>.
