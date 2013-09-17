@@ -1,15 +1,15 @@
 [mjw5407@REEDSTUDENT0412 testing]$ time ./doit10 2
 
-real	0m1.902s
-user	0m1.893s
-sys	0m0.007s
+real	0m1.893s
+user	0m1.870s
+sys	0m0.020s
 [mjw5407@REEDSTUDENT0412 testing]$ time ./doit3 2
 
-real	0m0.352s
-user	0m0.340s
-sys	0m0.007s
-[mjw5407@REEDSTUDENT0412 testing]$ python datacomparison/compare_sets.py ou3.txt three.ref 
+real	0m0.328s
+user	0m0.307s
+sys	0m0.017s
+[mjw5407@REEDSTUDENT0412 testing]$ python datacomparison/compare_sets.py ou3.txt three.ref
 Equal within 1e-06
-[mjw5407@REEDSTUDENT0412 testing]$ python datacomparison/compare_sets.py ou10.txt ten.ref  
+[mjw5407@REEDSTUDENT0412 testing]$ python datacomparison/compare_sets.py ou10.txt ten.ref
 Equal within 1e-06
 
