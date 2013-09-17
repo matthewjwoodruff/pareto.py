@@ -186,7 +186,7 @@ def eps_sort(tables, objectives, epsilons):
     for counter in range(len(tables)):
         solutions = tables[counter]
         # for each line in file (new candidate solution) ...
-        for i in xrange(0, solutions[:,0].size):
+        for i in range(0, solutions[:,0].size):
             try:
                 candidateSolution = solutions[i,:]
                 archive.sortinto(candidateSolution)
