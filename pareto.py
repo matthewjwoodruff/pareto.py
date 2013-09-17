@@ -56,10 +56,14 @@ import sys
 import numpy as np
 import math
 import argparse
-from sys import exit
 
 class Archive(object):
+    """ An archive of epsilon-nondominated solutions """
     def __init__(self, epsilons, oindices):
+        """
+        epsilons: sizes of epsilon boxes to use in the sort
+        oindices: indicate which indices in a solution are objectives
+        """
         self.archive = []
         self.boxes = [] # remember boxes
         self.objectives = [] # remember objectives
@@ -69,11 +73,13 @@ class Archive(object):
         self.itobj = range(self.nobj)
 
     def add(self, solution, sobj, sbox):
+        """ add a solution to the archive, plus auxiliary information """
         self.archive.append(solution)
         self.objectives.append(sobj)
         self.boxes.append(sbox)
 
     def remove(self, index):
+        """ remove a solution from the archive """
         self.archive.pop(index)
         self.objectives.pop(index)
         self.boxes.pop(index)
@@ -83,10 +89,13 @@ class Archive(object):
         Sort a solution into the archive.  Add it if it's nondominated
         w.r.t current solutions.
         """
-        # this code has a lot of early exits, keep control flow in mind
-        # break -- stop iterating and do not evaluate any more of the loop
-        # continue -- start the next loop iteration immediately
-        # return -- immediately stop executing the function
+        # Here's how the early loop exits in this code work:
+        # break:    Stop iterating the box comparison for loop because we know
+        #           the solutions are in relatively nondominated boxes.
+        # continue: Start the next while loop iteration immediately (i.e.
+        #           jump ahead to the comparison with the next archive member).
+        # return:   The candidate solution is dominated, stop comparing it to
+        #           the archive, don't add it, immediately exit the method.
 
         sobj = [solution[ii] for ii in self.oindices]
         sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
@@ -134,15 +143,17 @@ class Archive(object):
             else: # solution dominates
                 self.remove(ai)
                 ai -= 1
-                asize -=1
+                asize -= 1
+                # Need a continue here if we ever reorder the while loop.
                 continue # while
 
         # if you get here, then no archive solution has dominated this one
         self.add(solution, sobj, sbox)
 
-def get_args():
-    # Get command line arguments and check for errors
-    parser = argparse.ArgumentParser(
+def get_args(argv):
+    """ Get command line arguments """
+    prog = argv.pop(0)
+    parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
     parser.add_argument('--objectives', type=int, nargs='+', required=False,
                         help='Objective Columns (zero-indexed)')
@@ -159,43 +170,48 @@ def get_args():
                         help='Print only objectives in output')
     parser.add_argument('--precision', type=int, required=False, default=8,
                         help='Output floating-point precision')
-    return parser.parse_args()
+    return parser.parse_args(argv)
 
-if __name__ == "__main__":
-    args = get_args()
-
+def cli(args):
+    """ command-line interface, execute the comparison """
     # Get the first input file to check size
     tempinput = np.loadtxt(args.input[0], delimiter=args.delimiter)
 
     # If objectives not given, use all columns
-    if not args.objectives:
-      args.objectives = range(tempinput[0,:].size)
+    if args.objectives is None:
+        objectives = range(tempinput[0,:].size)
     # If given objectives are out of bounds, exit with error
     elif (min(args.objectives) < 0 or max(args.objectives) > tempinput[0,:].size):
-      msg = "Error: One or more objective values exceed input matrix bounds\n"
-      sys.stdout.write(msg)
-      exit()
-    if args.epsilons:
-      if len(args.epsilons) != len(args.objectives): # make sure number of epsilons matches number of objectives
-        msg =  "Error: Number of epsilon values must match number of objectives.\n"
+        msg = "Error: One or more objective values exceed input matrix bounds\n"
         sys.stdout.write(msg)
         exit()
     else:
-      args.epsilons = [1e-9]*len(args.objectives) # if epsilons not defined, use 1e-9 for all objectives
+        objectives = args.objectives
 
-    archive = Archive(args.epsilons, args.objectives)
+    if args.epsilons:
+        if len(args.epsilons) != len(objectives): # make sure number of epsilons matches number of objectives
+            msg =  "Error: Number of epsilon values must match number of objectives.\n"
+            sys.stdout.write(msg)
+            exit()
+    else:
+        args.epsilons = [1e-9]*len(objectives) # if epsilons not defined, use 1e-9 for all objectives
+
+    archive = Archive(args.epsilons, objectives)
 
     # for each file in argument list ...
     for filename in args.input:
-      solutions = np.loadtxt(filename, delimiter=args.delimiter)
+        solutions = np.loadtxt(filename, delimiter=args.delimiter)
 
-      # for each line in file (new candidate solution) ...
-      for i in xrange(0, solutions[:,0].size):
-        candidateSolution = solutions[i,:]
-        archive.sortinto(candidateSolution)
+        # for each line in file (new candidate solution) ...
+        for i in xrange(0, solutions[:,0].size):
+            candidateSolution = solutions[i,:]
+            archive.sortinto(candidateSolution)
 
     # Convert ParetoSet to nparray and print it
     ParetoSet = np.array(archive.archive)
     if args.print_only_objectives:
-      ParetoSet = ParetoSet[:, args.objectives]
+        ParetoSet = ParetoSet[:, objectives]
     np.savetxt(args.output, ParetoSet, delimiter=args.delimiter, fmt='%.' + str(args.precision) + 'e')
+
+if __name__ == "__main__":
+    cli(get_args(sys.argv))
