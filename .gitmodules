@@ -1,3 +1,3 @@
 [submodule "datacomparison"]
-	path = datacomparison
+	path = testing/datacomparison
 	url = git@github.com:matthewjwoodruff/datacomparison
