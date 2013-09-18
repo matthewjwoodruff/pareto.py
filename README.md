@@ -2,7 +2,7 @@
 ####Nondominated sorting for multi-objective problems
 by [jdherman](https://github.com/jdherman) and [matthewjwoodruff](https://github.com/matthewjwoodruff)
 
-Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set. Requires [NumPy](http://www.numpy.org/). Files can contain columns other than objectives which are not sorted.  `pareto.py` assumes that all objectives are to be minimized.
+An epsilon-nondominated sort.  Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set.  Solutions can contain columns other than objectives, which will be carried through, unsorted, to the output.  By default, output rows are reproduced verbatim from input.  `pareto.py` assumes that all objectives are to be minimized.
 
 Example usage for a group of input files beginning with `my_file_`:
 ```
@@ -12,11 +12,10 @@ python pareto.py \
 	   --objectives 3 5 7 \
 	   --epsilons 0.01 0.05 0.1 \
 	   --delimiter=' ' \
-	   --precision=8 \
 	   --print-only-objectives
 ```
 
-* `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Lines beginning with `#` are treated as comments. Input files must all contain the same number of columns. 
+* `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
 
 * `-o, --output`: Required. Filename to output your Pareto set.
 
@@ -29,12 +28,16 @@ python pareto.py \
 	* Comma-delimited: `--delimiter=','`
 	* Tab-delimited: `--delimiter=$'\t'`
 
-* `--precision`: Digits of precision in the output file (optional). Default is 8.
-
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
+### Dependencies
+
+* Python standard library (`sys`, `math`, and `argparse`)
+* Python 2.7 or later, Python 3.2 or later (for `argparse`)
+
 ### License
-Copyright (C) 2013 Jon Herman, Matt Woodruff, Patrick Reed and others. Licensed under the GNU Lesser General Public License.
+Copyright (C) 2013 Jon Herman, Matt Woodruff, Patrick Reed and others. 
+Licensed under the GNU Lesser General Public License.
 
 pareto.py is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
