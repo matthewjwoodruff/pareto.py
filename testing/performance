@@ -1,18 +1,20 @@
-$ time ./doit10  
+(mypy)09-17 22:31 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
+$ time ./doit10    
 
-real    0m4.788s
-user    0m1.837s
-sys     0m0.095s
-(mypy)09-17 22:07 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
-$ time ./doit3
+real    0m2.485s
+user    0m1.483s
+sys     0m0.068s
+(mypy)09-17 22:31 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
+$ time ./doit3  
 
-real    0m0.726s
-user    0m0.123s
-sys     0m0.079s
-(mypy)09-17 22:07 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
+real    0m0.867s
+user    0m0.097s
+sys     0m0.062s
+(mypy)09-17 22:31 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
 $ python datacomparison/compare_sets.py ou3.txt three.ref
 Equal within 1e-06
-(mypy)09-17 22:07 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
-$ python datacomparison/compare_sets.py ou10.txt ten.ref
+(mypy)09-17 22:32 -0400 hammer11 /gpfs/work/m/mjw5407/pareto/testing
+$ python datacomparison/compare_sets.py ou10.txt ten.ref  
 Equal within 1e-06
+
 
