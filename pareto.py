@@ -53,7 +53,6 @@ For a fast nondominated sort:
 """
 
 import sys
-import numpy as np
 import math
 import argparse
 
@@ -203,7 +202,7 @@ def get_args(argv):
 class SortInputError(Exception):
     """ Information about a defective input """
     def __init__(self, msg, row, table):
-        super(SortError, self).__init__(msg)
+        super(SortInputError, self).__init__(msg)
         self.row = row
         self.table = table
 
@@ -266,7 +265,8 @@ def cli(args):
         archive = eps_sort(tables, args.objectives, epsilons)
     except SortInputError as sie:
         table = args.input[sie.table]
-        raise SortInputError(sie.message, sie.row, table)
+        msg = sie.message.replace("input", table)
+        raise SortInputError(msg, sie.row, table)
 
     with open(args.output, 'w') as fp:
         for row in archive.archive:
