@@ -53,7 +53,6 @@ For a fast nondominated sort:
 """
 
 import sys
-import numpy as np
 import math
 import argparse
 
