@@ -35,13 +35,13 @@ python pareto.py \
 ### What is this?
 For more information, please consult the following references:
 
-* (Wikipedia: Pareto Efficiency)[https://en.wikipedia.org/wiki/Pareto_efficiency]
+* [https://en.wikipedia.org/wiki/Pareto_efficiency](Wikipedia: Pareto Efficiency)
 
-* (Wikipedia: Multi-objective Optimization)[https://en.wikipedia.org/wiki/Multi-objective_optimization]
+* [https://en.wikipedia.org/wiki/Multi-objective_optimization](Wikipedia: Multi-objective Optimization)
 
-* (Kanpur Genetic Algorithms Laboratory Homepage)[http://www.iitk.ac.in/kangal/index.shtml]
+* [http://www.iitk.ac.in/kangal/index.shtml](Kanpur Genetic Algorithms Laboratory Homepage)
 
-* (Waterprogramming Research Blog)[http://waterprogramming.wordpress.com]
+* [http://waterprogramming.wordpress.com](Waterprogramming Research Blog)
 
 * Deb, K., M. Mohan, and S. Mishra. 2005 "Evaluating the epsilon-domination based multiobjective evolutionary algorithm for a quick computation of Pareto-optimal solutions"  *Evolutionary Computation Journal* 13 (4): 501-525.
 
