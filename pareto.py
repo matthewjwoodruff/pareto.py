@@ -270,11 +270,11 @@ def cli(args):
         if args.print_only_objectives and args.objectives is not None:
             for row in archive.archive:
                 obj = [row[ii] for ii in args.objectives]
-                fp.write(" ".join(obj))
+                fp.write(args.delimiter.join(obj))
                 fp.write("\n")
         else:
             for row in archive.archive:
-                fp.write(" ".join(row))
+                fp.write(args.delimiter.join(row))
                 fp.write("\n")
 
 if __name__ == "__main__":
