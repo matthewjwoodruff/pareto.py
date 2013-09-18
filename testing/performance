@@ -1,22 +1,20 @@
-$ python datacomparison/compare_sets.py ou10.txt ten.ref  
-Equal within 1e-06
-
-
-(mypy)09-18 10:15 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
-$ time ./doit10
-
-real    0m1.614s
-user    0m1.452s
-sys     0m0.058s
-(mypy)09-18 10:15 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
-$ python datacomparison/compare_sets.py ou10.txt ten.ref
-Equal within 1e-06
-(mypy)09-18 10:15 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
+(mypy)09-18 10:21 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
 $ time ./doit3
 
-real    0m0.221s
-user    0m0.104s
+real    0m1.196s
+user    0m0.048s
+sys     0m0.029s
+(mypy)09-18 10:21 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
+$ time ./doit10
+
+real    0m1.422s
+user    0m1.384s
 sys     0m0.033s
-(mypy)09-18 10:15 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
+(mypy)09-18 10:22 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
 $ python datacomparison/compare_sets.py ou3.txt three.ref
 Equal within 1e-06
+(mypy)09-18 10:22 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
+$ python datacomparison/compare_sets.py ou10.txt ten.ref 
+Equal within 1e-06
+(mypy)09-18 10:22 -0400 hammer7 /gpfs/work/m/mjw5407/pareto/testing
+
