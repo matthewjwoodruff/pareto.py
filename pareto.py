@@ -208,6 +208,13 @@ class SortInputError(Exception):
         self.table = table
 
 def eps_sort(tables, objectives, epsilons):
+    """
+    Perform an epsilon-nondominated sort
+    tables: input data, must support iteration
+    objectives: list of column indices in which objectives can be found,
+                if None default to all columns
+    epsilons: list of epsilons for the sort, if None default to 1e-9
+    """
     archive = Archive(epsilons, objectives)
 
     # for each file in argument list ...
@@ -248,7 +255,7 @@ def cli(args):
     """ command-line interface, execute the comparison """
     tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
-    if args.epsilons is not None:
+    if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
             msg = "{0} epsilons specified for {1} objectives".format(
                     len(args.epsilons), len(args.objectives))
