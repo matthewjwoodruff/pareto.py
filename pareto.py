@@ -97,7 +97,7 @@ class Archive(object):
         # return:   The candidate solution is dominated, stop comparing it to
         #           the archive, don't add it, immediately exit the method.
 
-        sobj = [solution[ii] for ii in self.oindices]
+        sobj = [float(solution[ii]) for ii in self.oindices]
         sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
 
         asize = len(self.archive)
@@ -201,9 +201,24 @@ def eps_sort(tables, objectives, epsilons):
 
     return archive
 
+def rowsof(filename, delimiter):
+    """ 
+    Generator function yielding rows read from a file.
+    Avoids having to read the whole file at once.
+    """
+    with open(filename, 'r') as fp:
+        try:
+            while True:
+                line = fp.next()
+                row = line.strip().split(delimiter)
+                yield row
+        except StopIteration:
+            pass
+
 def cli(args):
     """ command-line interface, execute the comparison """
-    tables = [np.loadtxt(fn, delimiter = args.delimiter) for fn in args.input]
+    tables = [rowsof(fn, delimiter) for fn in args.input]
+
     if args.objectives is None:
         objectives = range(tables[0][0,:].size)
     else:
@@ -226,11 +241,10 @@ def cli(args):
         table = args.input[sie.table]
         raise SortInputError(sie.message, sie.row, table)
 
-    # Convert ParetoSet to nparray and print it
-    ParetoSet = np.array(archive.archive)
-    if args.print_only_objectives:
-        ParetoSet = ParetoSet[:, objectives]
-    np.savetxt(args.output, ParetoSet, delimiter=args.delimiter, fmt='%.' + str(args.precision) + 'e')
+    with open(args.output, 'w') as fp:
+        for row in archive.archive:
+            fp.write(" ".join(row))
+            fp.write("\n")
 
 if __name__ == "__main__":
     cli(get_args(sys.argv))
