@@ -57,6 +57,8 @@ import numpy as np
 import math
 import argparse
 
+class SortParameterError(Exception): pass
+
 class Archive(object):
     """ An archive of epsilon-nondominated solutions """
     def __init__(self, epsilons, oindices):
@@ -68,9 +70,16 @@ class Archive(object):
         self.boxes = [] # remember boxes
         self.objectives = [] # remember objectives
         self.epsilons = epsilons
-        self.oindices = oindices
-        self.nobj = len(oindices)
-        self.itobj = range(self.nobj)
+        if oindices is not None:
+            self.oindices = oindices
+            self.nobj = len(oindices)
+            self.itobj = range(self.nobj)
+        else:
+            self.oindices = []
+            self.nobj = 0
+            self.itobj = range(0)
+            self._realsortinto = self.sortinto
+            self.sortinto = self.initialsortinto
 
     def add(self, solution, sobj, sbox):
         """ add a solution to the archive, plus auxiliary information """
@@ -83,6 +92,25 @@ class Archive(object):
         self.archive.pop(index)
         self.objectives.pop(index)
         self.boxes.pop(index)
+
+    def initialsortinto(self, solution):
+        """
+        Gets called the very first time, to establish the 
+        number of objectives and, if not supplied, epsilons.
+        """
+        self.nobj = len(solution)
+        self.oindices = range(self.nobj)
+        self.itobj = range(self.nobj)
+
+        if self.epsilons is None:
+            self.epsilons = [1e-9]*self.nobj
+        elif len(self.epsilons) != self.nobj:
+            msg = "{0} epsilons specified, but found {1} columns".format(
+                    len(self.epsilons), self.nobj)
+            raise SortParameterError(msg)
+
+        self.sortinto = self._realsortinto
+        self.sortinto(solution)
 
     def sortinto(self, solution):
         """
@@ -186,18 +214,19 @@ def eps_sort(tables, objectives, epsilons):
     for counter in range(len(tables)):
         solutions = tables[counter]
         # for each line in file (new candidate solution) ...
-        for i in range(0, solutions[:,0].size):
+        rownumber = 0
+        for row in solutions:
             try:
-                candidateSolution = solutions[i,:]
-                archive.sortinto(candidateSolution)
+                archive.sortinto(row)
+                rownumber += 1
             except IndexError:
                 msg = "Not enough columns in row {0} of input {1}".format(
-                                                                    i, counter)
-                raise SortInputError(msg, i, counter)
+                                               rownumber, counter)
+                raise SortInputError(msg, rownumber, counter)
             except ValueError as ve:
                 msg = "{0} on row {1} of input {2}".format(
-                                                        ve.message, i, counter)
-                raise SortInputError(msg, i, counter)
+                                                ve.message, rownumber, counter)
+                raise SortInputError(msg, rownumber, counter)
 
     return archive
 
@@ -219,24 +248,15 @@ def cli(args):
     """ command-line interface, execute the comparison """
     tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
-    if args.objectives is None:
-        objectives = range(tables[0][0,:].size)
-    else:
-        objectives = args.objectives
-
-    if args.epsilons:
-        if len(args.epsilons) != len(objectives):
-            msg =  "Error: Number of epsilon values must match "\
-                   "number of objectives.\n"
-            sys.stdout.write(msg)
-            exit()
-        epsilons = args.epsilons
-    else:
-        # if epsilons not defined, use 1e-9 for all objectives
-        epsilons = [1e-9]*len(objectives) 
+    if args.epsilons is not None:
+        if len(args.epsilons) != len(args.objectives):
+            msg = "{0} epsilons specified for {1} objectives".format(
+                    len(args.epsilons), len(args.objectives))
+            raise SortParameterError(msg)
+    epsilons = args.epsilons
 
     try:
-        archive = eps_sort(tables, objectives, epsilons)
+        archive = eps_sort(tables, args.objectives, epsilons)
     except SortInputError as sie:
         table = args.input[sie.table]
         raise SortInputError(sie.message, sie.row, table)
