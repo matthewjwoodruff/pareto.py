@@ -217,7 +217,7 @@ def rowsof(filename, delimiter):
 
 def cli(args):
     """ command-line interface, execute the comparison """
-    tables = [rowsof(fn, delimiter) for fn in args.input]
+    tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
     if args.objectives is None:
         objectives = range(tables[0][0,:].size)
