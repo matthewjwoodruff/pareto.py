@@ -35,13 +35,13 @@ python pareto.py \
 ### What is this?
 For more information, please consult the following references:
 
-* [<https://en.wikipedia.org/wiki/Pareto_efficiency>](Wikipedia: Pareto Efficiency)
+* <https://en.wikipedia.org/wiki/Pareto_efficiency>
 
-* [<https://en.wikipedia.org/wiki/Multi-objective_optimization>](Wikipedia: Multi-objective Optimization)
+* <https://en.wikipedia.org/wiki/Multi-objective_optimization>
 
-* [<http://www.iitk.ac.in/kangal/index.shtml>](Kanpur Genetic Algorithms Laboratory Homepage)
+* <http://www.iitk.ac.in/kangal/index.shtml>: Kanpur Genetic Algorithms Laboratory Homepage
 
-* [<http://waterprogramming.wordpress.com>](Waterprogramming Research Blog)
+* <http://waterprogramming.wordpress.com>: Waterprogramming Research Blog
 
 * Deb, K., M. Mohan, and S. Mishra. 2005 "Evaluating the epsilon-domination based multiobjective evolutionary algorithm for a quick computation of Pareto-optimal solutions"  *Evolutionary Computation Journal* 13 (4): 501-525.
 
@@ -50,7 +50,7 @@ For more information, please consult the following references:
 * Srinivas, N., and K. Deb. 1994. "Multiobjective optimization using nondominated sorting in genetic algorithms." *Evolutionary Computation* 2 (2): 221-248.
 
 ### Alternatives
-The sort in [<http://www.moeaframework.org>](moeaframework) is probably faster in most cases, since it is compiled Java rather than interpreted Python.  It has fewer options.  YMMV, TANSTAAFL.
+The sort from moeaframework (<http://www.moeaframework.org>) is probably faster in most cases, since it is compiled Java rather than interpreted Python.  It has fewer options.  YMMV, TANSTAAFL.
 
 ### Dependencies
 
