@@ -32,6 +32,26 @@ python pareto.py \
 
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
+### What is this?
+For more information, please consult the following references:
+
+* (Wikipedia: Pareto Efficiency)[https://en.wikipedia.org/wiki/Pareto_efficiency]
+
+* (Wikipedia: Multi-objective Optimization)[https://en.wikipedia.org/wiki/Multi-objective_optimization]
+
+* (Kanpur Genetic Algorithms Laboratory Homepage)[http://www.iitk.ac.in/kangal/index.shtml]
+
+* (Waterprogramming Research Blog)[http://waterprogramming.wordpress.com]
+
+* Deb, K., M. Mohan, and S. Mishra. 2005 "Evaluating the epsilon-domination based multiobjective evolutionary algorithm for a quick computation of Pareto-optimal solutions"  *Evolutionary Computation Journal* 13 (4): 501-525.
+
+* Deb, K., A. Pratap, S. Agarwal, and T. Meyarivan. 2002. "A fast and elitist multiobjective genetic algorithm: NSGA-II." *IEEE Transactions on Evolutionary Computation* 6 (2): 182-197.
+
+* Srinivas, N., and K. Deb. 1994. "Multiobjective optimization using nondominated sorting in genetic algorithms." *Evolutionary Computation* 2 (2): 221-248.
+
+### Alternatives
+The sort in (moeaframework)[http://www.moeaframework.org] is probably faster in most cases, since it is compiled Java rather than interpreted Python.  It has fewer options.  YMMV, TANSTAAFL.
+
 ### Dependencies
 
 * Python standard library (`sys`, `math`, and `argparse`)
