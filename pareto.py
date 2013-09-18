@@ -57,6 +57,8 @@ import numpy as np
 import math
 import argparse
 
+class SortParameterError(Exception): pass
+
 class Archive(object):
     """ An archive of epsilon-nondominated solutions """
     def __init__(self, epsilons, oindices):
@@ -102,6 +104,10 @@ class Archive(object):
 
         if self.epsilons is None:
             self.epsilons = [1e-9]*self.nobj
+        elif len(self.epsilons) != self.nobj:
+            msg = "{0} epsilons specified, but found {1} columns".format(
+                    len(self.epsilons), self.nobj)
+            raise SortParameterError(msg)
 
         self.sortinto = self._realsortinto
         self.sortinto(solution)
@@ -242,18 +248,15 @@ def cli(args):
     """ command-line interface, execute the comparison """
     tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
-    if args.epsilons:
-        if len(args.epsilons) != len(objectives):
-            msg =  "Error: Number of epsilon values must match "\
-                   "number of objectives.\n"
-            sys.stdout.write(msg)
-            exit()
+    if args.epsilons is not None:
+        if len(args.epsilons) != len(args.objectives):
+            msg = "{0} epsilons specified for {1} objectives".format(
+                    len(args.epsilons), len(args.objectives))
+            raise SortParameterError(msg)
     epsilons = args.epsilons
-    else:
-        # if epsilons not defined, use 1e-9 for all objectives
 
     try:
-        archive = eps_sort(tables, objectives, epsilons)
+        archive = eps_sort(tables, args.objectives, epsilons)
     except SortInputError as sie:
         table = args.input[sie.table]
         raise SortInputError(sie.message, sie.row, table)
