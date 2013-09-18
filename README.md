@@ -4,6 +4,8 @@ by [jdherman](https://github.com/jdherman) and [matthewjwoodruff](https://github
 
 An epsilon-nondominated sort.  Sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set.  Solutions can contain columns other than objectives, which will be carried through, unsorted, to the output.  By default, output rows are reproduced verbatim from input.  `pareto.py` assumes that all objectives are to be minimized.
 
+This sort assumes a desired output resolution (epsilons).  If a strict nondominated sort is required, it can be approximated by setting epsilons arbitrarily small (within reason -- floating-point division is involved here.)  The default epsilon resolution of 1e-9 will effectively result in a strict nondominated sort in many cases.
+
 Example usage for a group of input files beginning with `my_file_`:
 ```
 python pareto.py \
