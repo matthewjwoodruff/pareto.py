@@ -248,7 +248,7 @@ def rowsof(filename, delimiter):
     with open(filename, 'r') as fp:
         try:
             while True:
-                line = fp.next()
+                line = next(fp)
                 row = line.strip().split(delimiter)
                 yield row
         except StopIteration:
@@ -272,6 +272,8 @@ def filter_input(rows, **kwargs):
 
     comment = kwargs.get("comment", None)
     header = kwargs.get("header", 0)
+    if header is None:
+        header = 0
     blank = kwargs.get("blank", False)
 
     for row in rows:
@@ -289,15 +291,16 @@ def filter_input(rows, **kwargs):
                 continue
         except AttributeError as err:
             if "startswith" in err.message:
-                pass # couldn't do starswith, maybe row is floats?
+                # couldn't do starswith, maybe row is floats?
+                pass
             else:
-                raise err
+                raise
         yield row
 
 def cli(args):
     """ command-line interface, execute the comparison """
 
-    if any([a is not None for a in [args.blank, args.header, args.comment]]):
+    if args.header is not None or args.comment is not None or args.blank:
         tables = [filter_input( rowsof(fn, args.delimiter), 
                                 blank=args.blank,
                                 header=args.header,
