@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python${1} ../pareto.py --input in3_header.txt --output ou3.txt --objectives 27 28 29 --epsilons 0.1 0.1 0.1 --delimiter=' ' --header=1
+python${1} ../pareto.py in3_header.txt -o 27-29 -e 0.1 0.1 0.1 --header=1 > ou3.txt
