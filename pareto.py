@@ -264,10 +264,15 @@ def filter_input(rows, **kwargs):
           Could be a rowsof generator.
 
     Keyword arguments:
-    *comment* A character that, if it appears at the beginning of a row,
-              indicates that the row should be skipped
-    *header*  Number of rows to skip at the beginning of the file.
-    *blank*   If True, ignore blank rows.  They are an error otherwise.
+    *comment*       A character that, if it appears at the beginning of a row,
+                    indicates that the row should be skipped
+    *header*        Number of rows to skip at the beginning of the file.
+    *blank*         If True, ignore blank rows.  They are an error otherwise.
+    *contribution*  A tag to append to each row indicating where it came from.
+                    Can be anything printable.
+    *number*        Include line number in contribution if True.  Defaults to
+                    False.  Counts from 1 (because usual use case is files,
+                    where lines are conventionally numbered from 1.)
     """
 
     comment = kwargs.get("comment", None)
@@ -275,8 +280,13 @@ def filter_input(rows, **kwargs):
     if header is None:
         header = 0
     blank = kwargs.get("blank", False)
+    contribution = kwargs.get("contribution", None)
+    number = kwargs.get("number", False)
+
+    counter = 1
 
     for row in rows:
+        counter += 1
         if header > 0:
             header -= 1
             continue
@@ -295,6 +305,12 @@ def filter_input(rows, **kwargs):
                 pass
             else:
                 raise
+
+        if contribution is not None:
+            row.append(str(contribution))
+            if number:
+                row.append(str(counter))
+
         yield row
 
 def cli(args):
