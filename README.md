@@ -9,10 +9,10 @@ This sort assumes a desired output resolution (epsilons).  If a strict nondomina
 Example usage for a group of input files beginning with `my_file_`:
 ```
 python pareto.py \
-	   --input my_file_* \
+	   my_file_* \
+	   -o 3-5 \
+	   -e 0.01 0.05 0.1 \
 	   --output my_pareto_set.txt \
-	   --objectives 3 5 7 \
-	   --epsilons 0.01 0.05 0.1 \
 	   --delimiter=' ' \
 	   --print-only-objectives \
            --header=1 \
@@ -22,15 +22,15 @@ python pareto.py \
            --line-number
 ```
 
-* `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
+* `inputs`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
 
-* `-o, --output`: Required. Filename to output your Pareto set.
+* `--output`: Optional. Filename to output your Pareto set.
 
-* `--objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.
+* `-o, --objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.
 
-* `--epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
+* `-e, --epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
  
-* `--delimiter`: Input file delimiter (optional). Common choices:
+* `--delimiter`: Optional. Input file delimiter. Common choices:
 	* Space-delimited (default): `--delimiter=' '`
 	* Comma-delimited: `--delimiter=','`
 	* Tab-delimited: `--delimiter=$'\t'`
