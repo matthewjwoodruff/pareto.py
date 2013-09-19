@@ -221,7 +221,7 @@ def get_args(argv):
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
     parser.add_argument('inputs', type=argparse.FileType('r'),
-                        nargs='+', help='Input filenames')
+                        nargs='+', help='Input filenames.  Use - for stdin.')
     parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
                         help='Objective Columns (zero-indexed)')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
