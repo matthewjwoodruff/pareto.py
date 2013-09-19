@@ -33,11 +33,11 @@ python pareto.py \
  
 * `--delimiter`: Optional. Input file delimiter. Common choices:
 
-        * Space-delimited (default): `--delimiter=' '`
+        + Space-delimited (default): `--delimiter=' '`
 
-        * Comma-delimited: `--delimiter=','`
+        + Comma-delimited: `--delimiter=','`
 
-        * Tab-delimited: `--delimiter=$'\t'`
+        + Tab-delimited: `--delimiter=$'\t'`
 
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
