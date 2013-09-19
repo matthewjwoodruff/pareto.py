@@ -14,7 +14,10 @@ python pareto.py \
 	   --objectives 3 5 7 \
 	   --epsilons 0.01 0.05 0.1 \
 	   --delimiter=' ' \
-	   --print-only-objectives
+	   --print-only-objectives \
+           --header=1 \
+           --blank \
+           --comment="#"
 ```
 
 * `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
@@ -32,6 +35,13 @@ python pareto.py \
 
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
+* `--header`: Optional. Number of rows to skip at the top of each input.  If the header is prefixed with a comment character (see `--comment`) this is unnecessary.
+
+* `--comment`: Optional.  Character to look for at the beginning of a row indicating that the row contains a comment and should be ignored.  Commented rows are not preserved in output.
+
+* `--blank`: Optional. Skip blank rows instead of erroring out.
+
+
 ### What is this?
 For more information, please consult the following references:
 
@@ -48,6 +58,14 @@ For more information, please consult the following references:
 * Deb, K., A. Pratap, S. Agarwal, and T. Meyarivan. 2002. "A fast and elitist multiobjective genetic algorithm: NSGA-II." *IEEE Transactions on Evolutionary Computation* 6 (2): 182-197.
 
 * Srinivas, N., and K. Deb. 1994. "Multiobjective optimization using nondominated sorting in genetic algorithms." *Evolutionary Computation* 2 (2): 221-248.
+
+### But what is it for?
+Among other things, this script can serve the following purposes:
+
+* `pareto.py` may be used to post-process the output of multiple optimization runs.  Since multiple-objective evolutionary algorithms (MOEAs) are search heuristics using random numbers, they may be run more than once and produce different output each time.  Therefore the estabilshed best practice for MOEA users is to sort together the output of as many optimization runs as possible to get a good approximation of the true Pareto-efficient set.
+* `pareto.py` may be used to combine the output of more than one MOEA, for research studies comparing the performance of different MOEAs.  This is useful when computing metrics of optimization performance such as hypervolume and the epsilon-indicator.
+* `pareto.py` may be used to find the Pareto-efficient solutions within a set of data that does not result from optimization.
+* `pareto.py` may be used to prepare reference data for validating other implementations of epsilon-nondominated sorting routines.
 
 ### Alternatives
 The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) is probably faster in most cases, since it is compiled Java rather than interpreted Python.  It has fewer options.  YMMV, TANSTAAFL.
