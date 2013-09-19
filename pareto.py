@@ -77,8 +77,7 @@ class Archive(object):
             self.oindices = []
             self.nobj = 0
             self.itobj = range(0)
-            self._realsortinto = self.sortinto
-            self.sortinto = self.initialsortinto
+            self.sortinto = self._initialsortinto
 
     def add(self, solution, sobj, sbox):
         """ add a solution to the archive, plus auxiliary information """
@@ -92,7 +91,7 @@ class Archive(object):
         self.objectives.pop(index)
         self.boxes.pop(index)
 
-    def initialsortinto(self, solution):
+    def _initialsortinto(self, solution):
         """
         Gets called the very first time, to establish the 
         number of objectives and, if not supplied, epsilons.
@@ -111,7 +110,7 @@ class Archive(object):
         self.sortinto = self._realsortinto
         self.sortinto(solution)
 
-    def sortinto(self, solution):
+    def _realsortinto(self, solution):
         """
         Sort a solution into the archive.  Add it if it's nondominated
         w.r.t current solutions.
@@ -195,8 +194,6 @@ def get_args(argv):
     parser.add_argument('--print-only-objectives', action='store_true',
                         default=False, required=False,
                         help='Print only objectives in output')
-    parser.add_argument('--precision', type=int, required=False, default=8,
-                        help='Output floating-point precision')
     return parser.parse_args(argv)
 
 class SortInputError(Exception):
@@ -238,7 +235,7 @@ def eps_sort(tables, objectives, epsilons):
 
 def rowsof(filename, delimiter):
     """ 
-    Generator function yielding rows read from a file.
+    Generator function yielding rows read from a file. (Lazy input.)
     Avoids having to read the whole file at once.
     """
     with open(filename, 'r') as fp:
@@ -269,9 +266,15 @@ def cli(args):
         raise SortInputError(msg, sie.row, table)
 
     with open(args.output, 'w') as fp:
-        for row in archive.archive:
-            fp.write(" ".join(row))
-            fp.write("\n")
+        if args.print_only_objectives and args.objectives is not None:
+            for row in archive.archive:
+                obj = [row[ii] for ii in args.objectives]
+                fp.write(args.delimiter.join(obj))
+                fp.write("\n")
+        else:
+            for row in archive.archive:
+                fp.write(args.delimiter.join(row))
+                fp.write("\n")
 
 if __name__ == "__main__":
     cli(get_args(sys.argv))
