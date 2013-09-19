@@ -278,8 +278,11 @@ def filter_input(rows, **kwargs):
         if header > 0:
             header -= 1
             continue
-        if blank and len(row) == 0:
-            continue
+        if blank:
+            if len(row) == 0:
+                continue
+            elif len(row) == 1 and len(row[0]) == 0:
+                continue
 
         try:
             if comment is not None and row[0].startswith(comment):
@@ -289,17 +292,19 @@ def filter_input(rows, **kwargs):
                 pass # couldn't do starswith, maybe row is floats?
             else:
                 raise err
+        yield row
 
 def cli(args):
     """ command-line interface, execute the comparison """
 
-    if not any([a is None for a in [args.blank, args.header, args.comment]]):
+    if any([a is not None for a in [args.blank, args.header, args.comment]]):
         tables = [filter_input( rowsof(fn, args.delimiter), 
                                 blank=args.blank,
                                 header=args.header,
                                 comment=args.comment)
                       for fn in args.input]
-    tables = [rowsof(fn, args.delimiter) for fn in args.input]
+    else:
+        tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
