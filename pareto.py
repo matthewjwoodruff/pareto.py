@@ -220,19 +220,19 @@ def get_args(argv):
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'),
-                        nargs='+', help='Input filenames')
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
+                        help='input filenames, use - for standard input')
     parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
-                        help='Objective Columns (zero-indexed)')
+                        help='objective columns (zero-indexed)')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
-                        help='Epsilons, one per objective')
+                        help='epsilons, one per objective')
     parser.add_argument('--output', type=argparse.FileType('w'),
                         default=sys.stdout,
-                        help='Output Filename, default to standard out')
+                        help='output filename, default to standard output')
     parser.add_argument('--delimiter', type=str, default=' ',
-                        help='Input column delimiter')
+                        help='input column delimiter, default to space (" ")')
     parser.add_argument('--print-only-objectives', action='store_true',
-                        default=False, help='Print only objectives in output')
+                        default=False, help='print only objectives in output')
     parser.add_argument("--blank", action="store_true",
                         help="skip blank lines")
     parser.add_argument("--comment", type=str,
@@ -290,7 +290,7 @@ def rowsof(stream, delimiter):
     """
     try:
         while True:
-            line = next(fp)
+            line = next(stream)
             row = line.strip().split(delimiter)
             yield row
     except StopIteration:
