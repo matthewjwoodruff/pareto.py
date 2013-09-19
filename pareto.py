@@ -69,6 +69,7 @@ class Archive(object):
         self.boxes = [] # remember boxes
         self.objectives = [] # remember objectives
         self.epsilons = epsilons
+        self.sortinto = self._realsortinto
         if oindices is not None:
             self.oindices = oindices
             self.nobj = len(oindices)
@@ -194,6 +195,12 @@ def get_args(argv):
     parser.add_argument('--print-only-objectives', action='store_true',
                         default=False, required=False,
                         help='Print only objectives in output')
+    parser.add_argument("--blank", action="store_true",
+                        help="skip blank lines")
+    parser.add_argument("--comment", type=str,
+                        help="skip lines starting with this character")
+    parser.add_argument("--header", type=int,
+                        help="number of header lines to skip")
     return parser.parse_args(argv)
 
 class SortInputError(Exception):
@@ -247,8 +254,51 @@ def rowsof(filename, delimiter):
         except StopIteration:
             pass
 
+def filter_input(rows, **kwargs):
+    """
+    Generator function filtering out rows.
+    Use rowsof by itself if you can, as it's faster.
+
+    rows: Anything that you can iterate over and get rows.
+          A row is also iterable, and expected to be strings.
+          Could be a rowsof generator.
+
+    Keyword arguments:
+    *comment* A character that, if it appears at the beginning of a row,
+              indicates that the row should be skipped
+    *header*  Number of rows to skip at the beginning of the file.
+    *blank*   If True, ignore blank rows.  They are an error otherwise.
+    """
+
+    comment = kwargs.get("comment", None)
+    header = kwargs.get("header", 0)
+    blank = kwargs.get("blank", False)
+
+    for row in rows:
+        if header > 0:
+            header -= 1
+            continue
+        if blank and len(row) == 0:
+            continue
+
+        try:
+            if comment is not None and row[0].startswith(comment):
+                continue
+        except AttributeError as err:
+            if "startswith" in err.message:
+                pass # couldn't do starswith, maybe row is floats?
+            else:
+                raise err
+
 def cli(args):
     """ command-line interface, execute the comparison """
+
+    if not any([a is None for a in [args.blank, args.header, args.comment]]):
+        tables = [filter_input( rowsof(fn, args.delimiter), 
+                                blank=args.blank,
+                                header=args.header,
+                                comment=args.comment)
+                      for fn in args.input]
     tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
     if args.epsilons is not None and args.objectives is not None:
