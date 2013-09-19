@@ -290,7 +290,7 @@ def rowsof(stream, delimiter):
     """
     try:
         while True:
-            line = next(fp)
+            line = next(stream)
             row = line.strip().split(delimiter)
             yield row
     except StopIteration:
