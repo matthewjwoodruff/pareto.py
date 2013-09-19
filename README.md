@@ -9,12 +9,12 @@ This sort assumes a desired output resolution (epsilons).  If a strict nondomina
 Example usage for a group of input files beginning with `my_file_`:
 ```
 python pareto.py \
-	   --input my_file_* \
-	   --output my_pareto_set.txt \
-	   --objectives 3 5 7 \
-	   --epsilons 0.01 0.05 0.1 \
-	   --delimiter=' ' \
-	   --print-only-objectives \
+           --input my_file_* \
+           --output my_pareto_set.txt \
+           --objectives 3 5 7 \
+           --epsilons 0.01 0.05 0.1 \
+           --delimiter=' ' \
+           --print-only-objectives \
            --header=1 \
            --blank \
            --comment="#" \
