@@ -220,15 +220,15 @@ def get_args(argv):
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'),
-                        nargs='+', help='Input filenames.  Use - for stdin.')
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
+                        help='Input filenames.  Use - for standard input')
     parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
                         help='Objective Columns (zero-indexed)')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
                         help='Epsilons, one per objective')
     parser.add_argument('--output', type=argparse.FileType('w'),
                         default=sys.stdout,
-                        help='Output Filename, default to standard out')
+                        help='Output Filename, default to standard output')
     parser.add_argument('--delimiter', type=str, default=' ',
                         help='Input column delimiter')
     parser.add_argument('--print-only-objectives', action='store_true',
