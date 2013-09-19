@@ -201,6 +201,11 @@ def get_args(argv):
                         help="skip lines starting with this character")
     parser.add_argument("--header", type=int,
                         help="number of header lines to skip")
+    parser.add_argument("--contribution", action="store_true",
+                        help="append filename where solution originated")
+    parser.add_argument("--line-number", action="store_true",
+                        help="also append line number to solution if "\
+                             "--contribution is used.")
     return parser.parse_args(argv)
 
 class SortInputError(Exception):
@@ -213,7 +218,7 @@ class SortInputError(Exception):
 def eps_sort(tables, objectives, epsilons):
     """
     Perform an epsilon-nondominated sort
-    tables: input data, must support iteration
+    tables: input data, must support row iteration
     objectives: list of column indices in which objectives can be found,
                 if None default to all columns
     epsilons: list of epsilons for the sort, if None default to 1e-9
@@ -313,15 +318,32 @@ def filter_input(rows, **kwargs):
 
         yield row
 
+def use_filter(args):
+    """ return True if we need to use filtered input """
+    if args.header is not None:
+        return True
+    if args.comment is not None:
+        return True
+    if args.blank:
+        return True
+    if args.contribution:
+        return True
+    return False
+
 def cli(args):
     """ command-line interface, execute the comparison """
     
     tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
-    if args.header is not None or args.comment is not None or args.blank:
-        tables = [filter_input( table, blank=args.blank,
-                                header=args.header, comment=args.comment)
-                      for table in tables]
+    if use_filter(args):
+        if args.contribution:
+            tags = args.input
+        else:
+            tags = [None] * len(args.input)
+        tables = [filter_input(table, blank=args.blank, header=args.header,
+                               comment=args.comment, contribution=tag,
+                               number=args.line_number)
+                  for table, tag in zip(tables, tags)]
 
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
