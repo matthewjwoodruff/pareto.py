@@ -1,3 +1,3 @@
 #!/bin/sh
 
-python${1} ../pareto.py --input in3.txt --output ou3.txt --objectives 27 28 29 --epsilons 0.1 0.1 0.1 --delimiter=' ' --comment="#"
+python${1} ../pareto.py --input in3_comment.txt --output ou3.txt --objectives 27 28 29 --epsilons 0.1 0.1 0.1 --delimiter=' ' --comment="#"
