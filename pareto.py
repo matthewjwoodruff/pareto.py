@@ -94,7 +94,7 @@ class Archive(object):
 
     def _initialsortinto(self, solution):
         """
-        Gets called the very first time, to establish the 
+        Gets called the very first time, to establish the
         number of objectives and, if not supplied, epsilons.
         """
         self.nobj = len(solution)
@@ -220,21 +220,19 @@ def get_args(argv):
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
-    parser.add_argument('-o', '--objectives', type=intrange,
-                        nargs='+', required=False,
+    parser.add_argument('inputs', type=argparse.FileType('r'),
+                        nargs='+', help='Input filenames')
+    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
                         help='Objective Columns (zero-indexed)')
-    parser.add_argument('-e', '--epsilons', type=float, nargs='+', required=False,
+    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
                         help='Epsilons, one per objective')
     parser.add_argument('--output', type=argparse.FileType('w'),
                         default=sys.stdout,
                         help='Output Filename, default to standard out')
-    parser.add_argument('-i', '--input', type=str, required=True,
-                        nargs='+', help='Input filenames')
-    parser.add_argument('--delimiter', type=str, required=False,
-                        default=' ', help='Input column delimiter')
+    parser.add_argument('--delimiter', type=str, default=' ',
+                        help='Input column delimiter')
     parser.add_argument('--print-only-objectives', action='store_true',
-                        default=False, required=False,
-                        help='Print only objectives in output')
+                        default=False, help='Print only objectives in output')
     parser.add_argument("--blank", action="store_true",
                         help="skip blank lines")
     parser.add_argument("--comment", type=str,
@@ -285,19 +283,18 @@ def eps_sort(tables, objectives, epsilons):
 
     return archive
 
-def rowsof(filename, delimiter):
-    """ 
-    Generator function yielding rows read from a file. (Lazy input.)
+def rowsof(stream, delimiter):
+    """
+    Generator function yielding rows read from a stream. (Lazy input.)
     Avoids having to read the whole file at once.
     """
-    with open(filename, 'r') as fp:
-        try:
-            while True:
-                line = next(fp)
-                row = line.strip().split(delimiter)
-                yield row
-        except StopIteration:
-            pass
+    try:
+        while True:
+            line = next(fp)
+            row = line.strip().split(delimiter)
+            yield row
+    except StopIteration:
+        pass
 
 def filter_input(rows, **kwargs):
     """
@@ -372,14 +369,14 @@ def use_filter(args):
 
 def cli(args):
     """ command-line interface, execute the comparison """
-    
-    tables = [rowsof(fn, args.delimiter) for fn in args.input]
+
+    tables = [rowsof(fp, args.delimiter) for fp in args.inputs]
 
     if use_filter(args):
         if args.contribution:
-            tags = args.input
+            tags = [i.name for i in args.inputs]
         else:
-            tags = [None] * len(args.input)
+            tags = [None] * len(args.inputs)
         tables = [filter_input(table, blank=args.blank, header=args.header,
                                comment=args.comment, contribution=tag,
                                number=args.line_number)
@@ -402,20 +399,21 @@ def cli(args):
     try:
         archive = eps_sort(tables, objectives, epsilons)
     except SortInputError as sie:
-        table = args.input[sie.table]
+        table = args.inputs[sie.table].name
         msg = sie.message.replace("input", table)
         raise SortInputError(msg, sie.row, table)
 
-    with open(args.output, 'w') as fp:
-        if args.print_only_objectives and objectives is not None:
-            for row in archive.archive:
-                obj = [row[ii] for ii in objectives]
-                fp.write(args.delimiter.join(obj))
-                fp.write("\n")
-        else:
-            for row in archive.archive:
-                fp.write(args.delimiter.join(row))
-                fp.write("\n")
+    if args.print_only_objectives and objectives is not None:
+        for row in archive.archive:
+            obj = [row[ii] for ii in objectives]
+            args.output.write(args.delimiter.join(obj))
+            args.output.write("\n")
+    else:
+        for row in archive.archive:
+            args.output.write(args.delimiter.join(row))
+            args.output.write("\n")
+
+    args.output.close()
 
 if __name__ == "__main__":
     cli(get_args(sys.argv))
