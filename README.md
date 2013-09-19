@@ -23,6 +23,7 @@ python pareto.py \
 ```
 
 * `inputs`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
+            `-` may be specified as an input, indicating standard input.  This allows pareto.py to be part of a pipeline.
 
 * `--output`: Optional. Filename to output your Pareto set.
 
