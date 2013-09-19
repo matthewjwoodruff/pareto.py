@@ -299,15 +299,13 @@ def filter_input(rows, **kwargs):
 
 def cli(args):
     """ command-line interface, execute the comparison """
+    
+    tables = [rowsof(fn, args.delimiter) for fn in args.input]
 
     if args.header is not None or args.comment is not None or args.blank:
-        tables = [filter_input( rowsof(fn, args.delimiter), 
-                                blank=args.blank,
-                                header=args.header,
-                                comment=args.comment)
-                      for fn in args.input]
-    else:
-        tables = [rowsof(fn, args.delimiter) for fn in args.input]
+        tables = [filter_input( table, blank=args.blank,
+                                header=args.header, comment=args.comment)
+                      for table in tables]
 
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
