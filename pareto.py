@@ -77,8 +77,7 @@ class Archive(object):
             self.oindices = []
             self.nobj = 0
             self.itobj = range(0)
-            self._realsortinto = self.sortinto
-            self.sortinto = self.initialsortinto
+            self.sortinto = self._initialsortinto
 
     def add(self, solution, sobj, sbox):
         """ add a solution to the archive, plus auxiliary information """
@@ -92,7 +91,7 @@ class Archive(object):
         self.objectives.pop(index)
         self.boxes.pop(index)
 
-    def initialsortinto(self, solution):
+    def _initialsortinto(self, solution):
         """
         Gets called the very first time, to establish the 
         number of objectives and, if not supplied, epsilons.
@@ -111,7 +110,7 @@ class Archive(object):
         self.sortinto = self._realsortinto
         self.sortinto(solution)
 
-    def sortinto(self, solution):
+    def _realsortinto(self, solution):
         """
         Sort a solution into the archive.  Add it if it's nondominated
         w.r.t current solutions.
