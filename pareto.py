@@ -177,16 +177,55 @@ class Archive(object):
         # if you get here, then no archive solution has dominated this one
         self.add(solution, sobj, sbox)
 
+def intrange(arg):
+    """ convert a command-line argument to a list of integers """
+    acceptable_chars = [str(x) for x in range(10)]
+    acceptable_chars.append("-")
+
+    partial = []
+    first = None
+
+    msg = "Could not convert {0} to index range.".format(arg)
+    err = TypeError(msg)
+
+    for char in arg:
+        if char not in acceptable_chars:
+            raise err
+        if char == "-":
+            if len(partial) == 0:
+                raise err
+            elif first is None:
+                first = int("".join(partial))
+                partial = []
+            else: # this means there's a second -, which is not ok
+                raise err
+        else:
+            partial.append(char)
+
+    second = None
+    if first is None:
+        first = int("".join(partial))
+    elif len(partial) == 0:
+        raise err
+    else:
+        second = int("".join(partial))
+
+    if second is None:
+        return [first]
+    else:
+        return range(first, second+1)
+
 def get_args(argv):
     """ Get command line arguments """
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
-    parser.add_argument('--objectives', type=int, nargs='+', required=False,
+    parser.add_argument('-o', '--objectives', type=intrange,
+                        nargs='+', required=False,
                         help='Objective Columns (zero-indexed)')
     parser.add_argument('--epsilons', type=float, nargs='+', required=False,
                         help='Epsilons, one per objective')
-    parser.add_argument('-o', '--output', type=str,
+    parser.add_argument('--output', type=str,
                         required=True, help='Output Filename')
     parser.add_argument('-i', '--input', type=str, required=True,
                         nargs='+', help='Input filenames')
@@ -345,24 +384,31 @@ def cli(args):
                                number=args.line_number)
                   for table, tag in zip(tables, tags)]
 
-    if args.epsilons is not None and args.objectives is not None:
-        if len(args.epsilons) != len(args.objectives):
+    if args.objectives is not None:
+        objectives = []
+        for indexrange in args.objectives:
+            objectives.extend(indexrange)
+    else:
+        objectives = None
+
+    if args.epsilons is not None and objectives is not None:
+        if len(args.epsilons) != len(objectives):
             msg = "{0} epsilons specified for {1} objectives".format(
-                    len(args.epsilons), len(args.objectives))
+                    len(args.epsilons), len(objectives))
             raise SortParameterError(msg)
     epsilons = args.epsilons
 
     try:
-        archive = eps_sort(tables, args.objectives, epsilons)
+        archive = eps_sort(tables, objectives, epsilons)
     except SortInputError as sie:
         table = args.input[sie.table]
         msg = sie.message.replace("input", table)
         raise SortInputError(msg, sie.row, table)
 
     with open(args.output, 'w') as fp:
-        if args.print_only_objectives and args.objectives is not None:
+        if args.print_only_objectives and objectives is not None:
             for row in archive.archive:
-                obj = [row[ii] for ii in args.objectives]
+                obj = [row[ii] for ii in objectives]
                 fp.write(args.delimiter.join(obj))
                 fp.write("\n")
         else:
