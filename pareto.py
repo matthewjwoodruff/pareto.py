@@ -406,16 +406,17 @@ def cli(args):
         msg = sie.message.replace("input", table)
         raise SortInputError(msg, sie.row, table)
 
-    with open(args.output, 'w') as fp:
-        if args.print_only_objectives and objectives is not None:
-            for row in archive.archive:
-                obj = [row[ii] for ii in objectives]
-                fp.write(args.delimiter.join(obj))
-                fp.write("\n")
-        else:
-            for row in archive.archive:
-                fp.write(args.delimiter.join(row))
-                fp.write("\n")
+    if args.print_only_objectives and objectives is not None:
+        for row in archive.archive:
+            obj = [row[ii] for ii in objectives]
+            args.output.write(args.delimiter.join(obj))
+            args.output.write("\n")
+    else:
+        for row in archive.archive:
+            args.output.write(args.delimiter.join(row))
+            args.output.write("\n")
+
+    args.output.close()
 
 if __name__ == "__main__":
     cli(get_args(sys.argv))
