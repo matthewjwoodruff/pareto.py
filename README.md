@@ -17,7 +17,9 @@ python pareto.py \
 	   --print-only-objectives \
            --header=1 \
            --blank \
-           --comment="#"
+           --comment="#" \
+           --contribution \
+           --line-number
 ```
 
 * `-i, --input`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
@@ -40,6 +42,10 @@ python pareto.py \
 * `--comment`: Optional.  Character to look for at the beginning of a row indicating that the row contains a comment and should be ignored.  Commented rows are not preserved in output.
 
 * `--blank`: Optional. Skip blank rows instead of erroring out.
+
+* `--contribution`:  Optional.  Append filename of origin to each solution in the output.
+
+* `--line-number`: Optional.  Report line number in file of origin when appending contribution.
 
 
 ### What is this?
