@@ -223,10 +223,11 @@ def get_args(argv):
     parser.add_argument('-o', '--objectives', type=intrange,
                         nargs='+', required=False,
                         help='Objective Columns (zero-indexed)')
-    parser.add_argument('--epsilons', type=float, nargs='+', required=False,
+    parser.add_argument('-e', '--epsilons', type=float, nargs='+', required=False,
                         help='Epsilons, one per objective')
-    parser.add_argument('--output', type=str,
-                        required=True, help='Output Filename')
+    parser.add_argument('--output', type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        help='Output Filename, default to standard out')
     parser.add_argument('-i', '--input', type=str, required=True,
                         nargs='+', help='Input filenames')
     parser.add_argument('--delimiter', type=str, required=False,
