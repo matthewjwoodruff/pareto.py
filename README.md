@@ -75,6 +75,20 @@ The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) is 
 * Python standard library (`sys`, `math`, and `argparse`)
 * Python 2.7 or later, Python 3.2 or later (for `argparse`)
 
+### Note for Pandas users
+Pandas is an excellent library for Python data analysis.  Doing a nondominated 
+sort on a Pandas Data Frame requires `itertuples(False)`, because `pareto.py` expects 
+to be able to iterate over rows.  The `False` argument excludes the index.  It can
+be included if desired, but the objective columns should be adjusted accordingly.
+
+```
+import pandas
+import pareto
+
+table = pandas.read_table("datafile.txt")
+nondominated = pareto.eps_sort([table.itertuples(False)], [3, 4, 5], [1, 0.1, 3])
+```
+
 ### License
 Copyright (C) 2013 Jon Herman, Matt Woodruff, Patrick Reed and others. 
 Licensed under the GNU Lesser General Public License.
