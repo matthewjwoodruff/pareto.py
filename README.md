@@ -32,9 +32,10 @@ python pareto.py \
 * `-e, --epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
  
 * `--delimiter`: Optional. Input file delimiter. Common choices:
-        * Space-delimited (default): `--delimiter=' '`
-        * Comma-delimited: `--delimiter=','`
-        * Tab-delimited: `--delimiter=$'\t'`
+
+  * Space-delimited (default): `--delimiter=' '`
+  * Comma-delimited: `--delimiter=','`
+  * Tab-delimited: `--delimiter=$'\t'`
 
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
