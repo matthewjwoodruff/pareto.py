@@ -76,7 +76,9 @@ Among other things, this script can serve the following purposes:
 * `pareto.py` may be used to prepare reference data for validating other implementations of epsilon-nondominated sorting routines.
 
 ### Alternatives
-The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) is probably faster in most cases, since it is compiled Java rather than interpreted Python.  It has fewer options.  YMMV, TANSTAAFL.
+The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) tends to be faster then pareto.py when the reference set is large, i.e. when a lot of comparisons must be made for each solution.  pareto.py seems to have a speed advantage in situations where reading the input file is the limiting factor.  `ReferenceSetMerger` tends to use a great deal more RAM.
+
+YMMV, TANSTAAFL.
 
 ### Dependencies
 
