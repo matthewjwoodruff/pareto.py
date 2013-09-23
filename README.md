@@ -27,7 +27,7 @@ python pareto.py \
 
 * `--output`: Optional. Filename to output your Pareto set.
 
-* `-o, --objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.
+* `-o, --objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.  Ranges and individual column numbers may be mixed, e.g. `-o 0 3-7 12`
 
 * `-e, --epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
  
@@ -68,12 +68,13 @@ For more information, please consult the following references:
 * Srinivas, N., and K. Deb. 1994. "Multiobjective optimization using nondominated sorting in genetic algorithms." *Evolutionary Computation* 2 (2): 221-248.
 
 ### But what is it for?
-Among other things, this script can serve the following purposes:
+Among other things, `pareto.py` can serve the following purposes:
 
-* `pareto.py` may be used to post-process the output of multiple optimization runs.  Since multiple-objective evolutionary algorithms (MOEAs) are search heuristics using random numbers, they may be run more than once and produce different output each time.  Therefore the estabilshed best practice for MOEA users is to sort together the output of as many optimization runs as possible to get a good approximation of the true Pareto-efficient set.
-* `pareto.py` may be used to combine the output of more than one MOEA, for research studies comparing the performance of different MOEAs.  This is useful when computing metrics of optimization performance such as hypervolume and the epsilon-indicator.
-* `pareto.py` may be used to find the Pareto-efficient solutions within a set of data that does not result from optimization.
-* `pareto.py` may be used to prepare reference data for validating other implementations of epsilon-nondominated sorting routines.
+* Post-process the output of multiple optimization runs.  Since multiple-objective evolutionary algorithms (MOEAs) are search heuristics using random numbers, they may be run more than once and produce different output each time.  Therefore the estabilshed best practice for MOEA users is to sort together the output of as many optimization runs as possible to get a good approximation of the true Pareto-efficient set.
+* Combine the output of more than one MOEA, for research studies comparing the performance of different MOEAs.  This is useful when computing metrics of optimization performance such as hypervolume and the epsilon-indicator.
+* Find the Pareto-efficient solutions within a set of unsorted data.
+* Prepare reference data for validating other implementations of epsilon-nondominated sorting routines.
+* Understand how epsilon-nondominated sorting works by reading and modifying the source code.
 
 ### Alternatives
 The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) tends to be faster then pareto.py when the reference set is large, i.e. when a lot of comparisons must be made for each solution.  pareto.py seems to have a speed advantage in situations where reading the input file is the limiting factor.  `ReferenceSetMerger` tends to use a great deal more RAM.

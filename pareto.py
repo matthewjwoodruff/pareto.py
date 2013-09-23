@@ -215,37 +215,6 @@ def intrange(arg):
     else:
         return range(first, second+1)
 
-def get_args(argv):
-    """ Get command line arguments """
-    prog = argv.pop(0)
-    parser = argparse.ArgumentParser(prog=prog,
-        description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
-                        help='input filenames, use - for standard input')
-    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
-                        help='objective columns (zero-indexed)')
-    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
-                        help='epsilons, one per objective')
-    parser.add_argument('--output', type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help='output filename, default to standard output')
-    parser.add_argument('--delimiter', type=str, default=' ',
-                        help='input column delimiter, default to space (" ")')
-    parser.add_argument('--print-only-objectives', action='store_true',
-                        default=False, help='print only objectives in output')
-    parser.add_argument("--blank", action="store_true",
-                        help="skip blank lines")
-    parser.add_argument("--comment", type=str,
-                        help="skip lines starting with this character")
-    parser.add_argument("--header", type=int,
-                        help="number of header lines to skip")
-    parser.add_argument("--contribution", action="store_true",
-                        help="append filename where solution originated")
-    parser.add_argument("--line-number", action="store_true",
-                        help="also append line number to solution if "\
-                             "--contribution is used.")
-    return parser.parse_args(argv)
-
 class SortInputError(Exception):
     """ Information about a defective input """
     def __init__(self, msg, row, table):
@@ -367,6 +336,45 @@ def use_filter(args):
         return True
     return False
 
+def get_args(argv):
+    """ Get command line arguments """
+    prog = argv.pop(0)
+    parser = argparse.ArgumentParser(prog=prog,
+        description='Nondomination Sort for Multiple Files')
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
+                        help='input filenames, use - for standard input')
+    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
+                        help='objective columns (zero-indexed)')
+    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
+                        help='epsilons, one per objective')
+    parser.add_argument('--output', type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        help='output filename, default to standard output')
+    parser.add_argument('--delimiter', type=str, default=' ',
+                        help='input column delimiter, default to space (" ")')
+    parser.add_argument('--print-only-objectives', action='store_true',
+                        default=False, help='print only objectives in output')
+    parser.add_argument("--blank", action="store_true",
+                        help="skip blank lines")
+    parser.add_argument("--comment", type=str,
+                        help="skip lines starting with this character")
+    parser.add_argument("--header", type=int,
+                        help="number of header lines to skip")
+    parser.add_argument("--contribution", action="store_true",
+                        help="append filename where solution originated")
+    parser.add_argument("--line-number", action="store_true",
+                        help="also append line number to solution if "\
+                             "--contribution is used.")
+    args = parser.parse_args(argv)
+
+    if args.objectives is not None:
+        objectives = []
+        for indexrange in args.objectives:
+            objectives.extend(indexrange)
+        args.objectives = objectives
+
+    return args
+
 def cli(args):
     """ command-line interface, execute the comparison """
 
@@ -382,30 +390,23 @@ def cli(args):
                                number=args.line_number)
                   for table, tag in zip(tables, tags)]
 
-    if args.objectives is not None:
-        objectives = []
-        for indexrange in args.objectives:
-            objectives.extend(indexrange)
-    else:
-        objectives = None
-
-    if args.epsilons is not None and objectives is not None:
-        if len(args.epsilons) != len(objectives):
+    if args.epsilons is not None and args.objectives is not None:
+        if len(args.epsilons) != len(args.objectives):
             msg = "{0} epsilons specified for {1} objectives".format(
-                    len(args.epsilons), len(objectives))
+                    len(args.epsilons), len(args.objectives))
             raise SortParameterError(msg)
     epsilons = args.epsilons
 
     try:
-        archive = eps_sort(tables, objectives, epsilons)
+        archive = eps_sort(tables, args.objectives, epsilons)
     except SortInputError as sie:
         table = args.inputs[sie.table].name
         msg = sie.message.replace("input", table)
         raise SortInputError(msg, sie.row, table)
 
-    if args.print_only_objectives and objectives is not None:
+    if args.print_only_objectives and args.objectives is not None:
         for row in archive.archive:
-            obj = [row[ii] for ii in objectives]
+            obj = [row[ii] for ii in args.objectives]
             args.output.write(args.delimiter.join(obj))
             args.output.write("\n")
     else:
