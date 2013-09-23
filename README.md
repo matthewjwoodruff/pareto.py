@@ -23,7 +23,7 @@ python pareto.py \
 ```
 
 * `inputs`: Required. List of input files to sort, separated by spaces. Input files are assumed to contain floating-point values separated by `delimiter`. Input files must all contain the same number of columns. 
-            `-` may be specified as an input, indicating standard input.  This allows pareto.py to be part of a pipeline.
+            `-` may be specified as an input, indicating standard input.  This allows `pareto.py` to be part of a pipeline.
 
 * `--output`: Optional. Filename to output your Pareto set.
 
@@ -41,7 +41,7 @@ python pareto.py \
 
 * `--header`: Optional. Number of rows to skip at the top of each input.  If the header is prefixed with a comment character (see `--comment`) this is unnecessary.
 
-* `--comment`: Optional.  Character to look for at the beginning of a row indicating that the row contains a comment and should be ignored.  Commented rows are not preserved in output.
+* `-c, --comment`: Optional.  Character to look for at the beginning of a row indicating that the row contains a comment and should be ignored.  Commented rows are not preserved in output.  More than one character may be specified.  For example, `-c "#" "//"` will cause lines starting with either `#` or `//` to be skipped.
 
 * `--blank`: Optional. Skip blank rows instead of erroring out.
 
@@ -77,7 +77,7 @@ Among other things, `pareto.py` can serve the following purposes:
 * Understand how epsilon-nondominated sorting works by reading and modifying the source code.
 
 ### Alternatives
-The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) tends to be faster then pareto.py when the reference set is large, i.e. when a lot of comparisons must be made for each solution.  pareto.py seems to have a speed advantage in situations where reading the input file is the limiting factor.  `ReferenceSetMerger` tends to use a great deal more RAM.
+The `ReferenceSetMerger` from moeaframework (<http://www.moeaframework.org>) tends to be faster then `pareto.py` when the reference set is large, i.e. when a lot of comparisons must be made for each solution.  `pareto.py` seems to have a speed advantage in situations where reading the input file is the limiting factor.  `ReferenceSetMerger` tends to use a great deal more RAM.
 
 YMMV, TANSTAAFL.
 
@@ -99,6 +99,9 @@ import pareto
 table = pandas.read_table("datafile.txt")
 nondominated = pareto.eps_sort([table.itertuples(False)], [3, 4, 5], [1, 0.1, 3])
 ```
+
+### Note for PyPy users
+`pareto.py` works with PyPy.  Consistent with PyPy's reputation for speed, `pareto.py` runs several times faster than CPython.
 
 ### License
 Copyright (C) 2013 Jon Herman, Matt Woodruff, Patrick Reed and others. 
