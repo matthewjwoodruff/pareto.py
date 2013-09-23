@@ -308,8 +308,13 @@ def filter_input(rows, **kwargs):
                 continue
 
         try:
-            if comment is not None and row[0].startswith(comment):
-                continue
+            if comment is not None:
+                iscomment = False
+                for commentchar in comment:
+                    if row[0].startswith(commentchar):
+                        iscomment = True
+                if iscomment:
+                    continue
         except AttributeError as err:
             if "startswith" in err.message:
                 # couldn't do starswith, maybe row is floats?
@@ -356,7 +361,7 @@ def get_args(argv):
                         default=False, help='print only objectives in output')
     parser.add_argument("--blank", action="store_true",
                         help="skip blank lines")
-    parser.add_argument("--comment", type=str,
+    parser.add_argument("-c", "--comment", type=str, nargs="+",
                         help="skip lines starting with this character")
     parser.add_argument("--header", type=int,
                         help="number of header lines to skip")
