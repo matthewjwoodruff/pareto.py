@@ -339,39 +339,6 @@ def use_filter(args):
         return True
     return False
 
-def flip(rows, **kwargs):
-    """
-    Invert the values in each row.
-
-    Keyword arguments:
-    *columns*       which columns to invert, invert all if not specified
-    *maximize_all*  invert all columns if True
-    """
-    counter = -1
-    row = []
-    try:
-        columns = kwargs.get("columns", None)
-        if columns is not None:
-            import copy # just for this condition
-            for row in rows:
-                counter += 1
-                maxrow = copy.copy(row)
-                for cc in columns:
-                    maxrow[cc] = 0.0 - float(maxrow[cc])
-                yield maxrow
-        elif kwargs.get("maximize_all", False):
-            for row in rows:
-                counter += 1
-                maxrow = [0.0 - float(val) for val in row]
-                yield maxrow
-        else: # why are you using this function again?
-            for row in rows:
-                yield row
-    except ValueError as ve:
-        msg = "On row {0} of input: {1}, encountered error {2}".format(
-                    counter, row, ve)
-        raise SortInputError(msg)
-
 def get_args(argv):
     """ Get command line arguments """
     prog = argv.pop(0)
@@ -381,10 +348,6 @@ def get_args(argv):
                         help='input filenames, use - for standard input')
     parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
                         help='objective columns (zero-indexed)')
-    parser.add_argument('-m', '--maximize', type=intrange, nargs='+',
-                        help='objective columns to maximize (zero-indexed)')
-    parser.add_argument('-M', '--maximize-all', action="store_true",
-                        help='maximize all objectives')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
                         help='epsilons, one per objective')
     parser.add_argument('--output', type=argparse.FileType('w'),
@@ -418,12 +381,6 @@ def get_args(argv):
             objectives.extend(indexrange)
         args.objectives = objectives
 
-    if args.maximize is not None:
-        cols = []
-        for indexrange in args.maximize:
-            cols.extend(indexrange)
-        args.maximize = cols
-
     if args.tabs:
         args.delimiter = "\t"
 
@@ -443,15 +400,6 @@ def cli(args):
                                comment=args.comment, contribution=tag,
                                number=args.line_number)
                   for table, tag in zip(tables, tags)]
-
-    # Maximization is orthogonal to filtering.  This chains the generators.
-    if args.maximize is not None and not args.maximize_all:
-        tables = [flip(table, columns=args.maximize) for table in tables]
-    # maximize_all overrides maximize
-    elif args.objectives is not None and args.maximize_all:
-        tables = [flip(table, columns=args.objectives) for table in tables]
-    elif args.maximize_all:
-        tables = [flip(table, maximize_all=True) for table in tables]
 
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
