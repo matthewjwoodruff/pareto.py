@@ -10,7 +10,7 @@ sets = {}
 archives = {}
 
 fig = matplotlib.figure.Figure(figsize=(15,15))
-svg.FigureCanvasSVG(fig)
+agg.FigureCanvasAgg(fig)
 
 counter = 0
 
@@ -59,7 +59,7 @@ fig.subplots_adjust(wspace=0.3, hspace=0.3)
 fig.savefig("variety")
 
 fig = matplotlib.figure.Figure(figsize=(5,5))
-svg.FigureCanvasSVG(fig)
+agg.FigureCanvasAgg(fig)
 resolution = 0.06
 sets[resolution] = pandas.DataFrame(data=pareto.eps_sort([data.itertuples(False)], [0,1], [resolution]*2).archive)
 
@@ -99,7 +99,7 @@ fig.savefig("example")
     
 
 fig = matplotlib.figure.Figure(figsize=(5,5))
-svg.FigureCanvasSVG(fig)
+agg.FigureCanvasAgg(fig)
 
 ax = fig.add_subplot(1,1,1)
 ax.scatter(data[0], data[1], lw=0, facecolor=(0.7, 0.7, 0.7), zorder=-1)
