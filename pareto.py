@@ -245,7 +245,7 @@ def eps_sort(tables, objectives, epsilons):
                 raise SortInputError(msg, rownumber, counter)
             except ValueError as ve:
                 msg = "{0} on row {1} of input {2}".format(
-                                                ve.message, rownumber, counter)
+                                                str(ve), rownumber, counter)
                 raise SortInputError(msg, rownumber, counter)
 
     return archive
@@ -314,7 +314,7 @@ def filter_input(rows, **kwargs):
                 if iscomment:
                     continue
         except AttributeError as err:
-            if "startswith" in err.message:
+            if "startswith" in str(err):
                 # couldn't do starswith, maybe row is floats?
                 pass
             else:
@@ -339,22 +339,64 @@ def use_filter(args):
         return True
     return False
 
+def flip(rows, **kwargs):
+    """
+    Invert the values in each row.
+
+    Keyword arguments:
+    *columns*       which columns to invert, invert all if not specified
+    *maximize_all*  invert all columns if True
+    """
+    counter = -1
+    row = []
+    try:
+        columns = kwargs.get("columns", None)
+        if columns is not None:
+            import copy # just for this condition
+            for row in rows:
+                counter += 1
+                maxrow = copy.copy(row)
+                for cc in columns:
+                    maxrow[cc] = 0.0 - float(maxrow[cc])
+                yield maxrow
+        elif kwargs.get("maximize_all", False):
+            for row in rows:
+                counter += 1
+                maxrow = [0.0 - float(val) for val in row]
+                yield maxrow
+        else: # why are you using this function again?
+            for row in rows:
+                yield row
+    except ValueError as ve:
+        msg = "On row {0} of input: {1}, encountered error {2}".format(
+                    counter, row, ve)
+        raise SortInputError(msg)
+
 def get_args(argv):
     """ Get command line arguments """
     prog = argv.pop(0)
     parser = argparse.ArgumentParser(prog=prog,
         description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+',
                         help='input filenames, use - for standard input')
     parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
                         help='objective columns (zero-indexed)')
+    parser.add_argument('-m', '--maximize', type=intrange, nargs='+',
+                        help='objective columns to maximize (zero-indexed)')
+    parser.add_argument('-M', '--maximize-all', action="store_true",
+                        help='maximize all objectives')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
                         help='epsilons, one per objective')
     parser.add_argument('--output', type=argparse.FileType('w'),
                         default=sys.stdout,
                         help='output filename, default to standard output')
-    parser.add_argument('--delimiter', type=str, default=' ',
+
+    delimiters = parser.add_mutually_exclusive_group()
+    delimiters.add_argument('-d', '--delimiter', type=str, default=' ',
                         help='input column delimiter, default to space (" ")')
+    delimiters.add_argument('--tabs', action="store_true",
+                        help="use tabs as delimiter")
+
     parser.add_argument('--print-only-objectives', action='store_true',
                         default=False, help='print only objectives in output')
     parser.add_argument("--blank", action="store_true",
@@ -376,6 +418,15 @@ def get_args(argv):
             objectives.extend(indexrange)
         args.objectives = objectives
 
+    if args.maximize is not None:
+        cols = []
+        for indexrange in args.maximize:
+            cols.extend(indexrange)
+        args.maximize = cols
+
+    if args.tabs:
+        args.delimiter = "\t"
+
     return args
 
 def cli(args):
@@ -393,6 +444,15 @@ def cli(args):
                                number=args.line_number)
                   for table, tag in zip(tables, tags)]
 
+    # Maximization is orthogonal to filtering.  This chains the generators.
+    if args.maximize is not None and not args.maximize_all:
+        tables = [flip(table, columns=args.maximize) for table in tables]
+    # maximize_all overrides maximize
+    elif args.objectives is not None and args.maximize_all:
+        tables = [flip(table, columns=args.objectives) for table in tables]
+    elif args.maximize_all:
+        tables = [flip(table, maximize_all=True) for table in tables]
+
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
             msg = "{0} epsilons specified for {1} objectives".format(
@@ -404,7 +464,7 @@ def cli(args):
         archive = eps_sort(tables, args.objectives, epsilons)
     except SortInputError as sie:
         table = args.inputs[sie.table].name
-        msg = sie.message.replace("input", table)
+        msg = str(sie).replace("input", table)
         raise SortInputError(msg, sie.row, table)
 
     if args.print_only_objectives and args.objectives is not None:
