@@ -14,7 +14,7 @@ Data prior to sorting.  Objectives f1 and f2 are both to be minimized.
 
 Data after epsilon-nondominated sort.  Red epsilon-boxes and all of the solutions in them are dominated.  Marked solutions are epsilon-nondominated.
 
-[This picture](https://raw.github.com/jdherman/pareto.py/picture/variety.png) shows the same data sorted at a variety of epsilon resolutions.
+[This picture](https://raw.github.com/jdherman/pareto.py/picture/variety.png) shows the same data sorted at a variety of epsilon resolutions.  (Note that there is no requirement that epsilons be the same for each objective.  Epsilons for f1 and f2 are set equal for illustration only.)
 
 
 Example usage for a group of input files beginning with `my_file_`:
