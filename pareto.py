@@ -175,6 +175,41 @@ class Archive(object):
         # if you get here, then no archive solution has dominated this one
         self.add(solution, sobj, sbox)
 
+class MixedArchive(Archive):
+    """ an archive with maximization objectives """
+    def __init__(self, epsilons, oindices, maximize, maximize_all):
+        """
+        epsilons: sizes of epsilon boxes to use in the sort
+        oindices: indicate which indices in a solution are objectives
+        maximize: column indices to maximize
+        maximize_all: maximize all columns
+        """
+        super(self, MixedArchive).__init__(epsilons, oindices)
+        self.maximize = maximize
+        self.maximize_all = maximize_all
+
+    def _initalsortinto(self, solution):
+        """
+        Establish number of objectives and which are maximized
+        """
+        if self.oindices is None:
+            self.nobj = len(solution)
+            self.oindices = range(self.nobj)
+        else:
+            self.nobj = len(self.oindices)
+        if self.maximize_all:
+            self.maximize = self.oindices
+        if self.maximize is None:
+            self.maximize = []
+        super(self, MixedArchive)._initialsortinto(solution)
+
+    def _realsortinto(self, solution):
+        """
+        cache the 
+
+        
+
+
 def intrange(arg):
     """ convert a command-line argument to a list of integers """
     acceptable_chars = [str(x) for x in range(10)]
@@ -220,14 +255,21 @@ class SortInputError(Exception):
         self.row = row
         self.table = table
 
-def eps_sort(tables, objectives, epsilons):
+def eps_sort(tables, objectives, epsilons, **kwargs):
     """
     Perform an epsilon-nondominated sort
     tables: input data, must support row iteration
     objectives: list of column indices in which objectives can be found,
                 if None default to all columns
     epsilons: list of epsilons for the sort, if None default to 1e-9
+
+    Keyword arguments:
+    *maximize*      invert the sense of these columns
+    *maximize_all*  invert the sense of all columns
     """
+    maximize = kwargs.get("maximize", None)
+    maximize_all = kwargs.get("maximize_all", False)
+
     archive = Archive(epsilons, objectives)
 
     # for each file in argument list ...
@@ -339,39 +381,6 @@ def use_filter(args):
         return True
     return False
 
-def flip(rows, **kwargs):
-    """
-    Invert the values in each row.
-
-    Keyword arguments:
-    *columns*       which columns to invert, invert all if not specified
-    *maximize_all*  invert all columns if True
-    """
-    counter = -1
-    row = []
-    try:
-        columns = kwargs.get("columns", None)
-        if columns is not None:
-            import copy # just for this condition
-            for row in rows:
-                counter += 1
-                maxrow = copy.copy(row)
-                for cc in columns:
-                    maxrow[cc] = 0.0 - float(maxrow[cc])
-                yield maxrow
-        elif kwargs.get("maximize_all", False):
-            for row in rows:
-                counter += 1
-                maxrow = [0.0 - float(val) for val in row]
-                yield maxrow
-        else: # why are you using this function again?
-            for row in rows:
-                yield row
-    except ValueError as ve:
-        msg = "On row {0} of input: {1}, encountered error {2}".format(
-                    counter, row, ve)
-        raise SortInputError(msg)
-
 def get_args(argv):
     """ Get command line arguments """
     prog = argv.pop(0)
@@ -424,6 +433,9 @@ def get_args(argv):
             cols.extend(indexrange)
         args.maximize = cols
 
+    if args.objectives is not None and args.maximize_all:
+        args.maximize = args.objectives
+
     if args.tabs:
         args.delimiter = "\t"
 
@@ -444,15 +456,6 @@ def cli(args):
                                number=args.line_number)
                   for table, tag in zip(tables, tags)]
 
-    # Maximization is orthogonal to filtering.  This chains the generators.
-    if args.maximize is not None and not args.maximize_all:
-        tables = [flip(table, columns=args.maximize) for table in tables]
-    # maximize_all overrides maximize
-    elif args.objectives is not None and args.maximize_all:
-        tables = [flip(table, columns=args.objectives) for table in tables]
-    elif args.maximize_all:
-        tables = [flip(table, maximize_all=True) for table in tables]
-
     if args.epsilons is not None and args.objectives is not None:
         if len(args.epsilons) != len(args.objectives):
             msg = "{0} epsilons specified for {1} objectives".format(
@@ -461,7 +464,9 @@ def cli(args):
     epsilons = args.epsilons
 
     try:
-        archive = eps_sort(tables, args.objectives, epsilons)
+        archive = eps_sort(tables, args.objectives, epsilons, 
+                           maximize=args.maximize, 
+                           maximize_all=args.maximize_all)
     except SortInputError as sie:
         table = args.inputs[sie.table].name
         msg = str(sie).replace("input", table)
