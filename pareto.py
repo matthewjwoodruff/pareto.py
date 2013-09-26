@@ -68,17 +68,11 @@ class Archive(object):
         self.archive = []
         self.boxes = [] # remember boxes
         self.objectives = [] # remember objectives
+        self.sortinto = self._initialsortinto
         self.epsilons = epsilons
-        self.sortinto = self._realsortinto
-        if oindices is not None:
-            self.oindices = oindices
-            self.nobj = len(oindices)
-            self.itobj = range(self.nobj)
-        else:
-            self.oindices = []
-            self.nobj = 0
-            self.itobj = range(0)
-            self.sortinto = self._initialsortinto
+        self.oindices = oindices
+        self.nobj = 0
+        self.itobj = range(self.nobj)
 
     def add(self, solution, sobj, sbox):
         """ add a solution to the archive, plus auxiliary information """
@@ -95,16 +89,20 @@ class Archive(object):
     def _initialsortinto(self, solution):
         """
         Gets called the very first time, to establish the
-        number of objectives and, if not supplied, epsilons.
+        number of objectives and what the epsilons are.
         """
-        self.nobj = len(solution)
-        self.oindices = range(self.nobj)
+        if self.oindices is None:
+            self.nobj = len(solution)
+            self.oindices = range(self.nobj)
+        else:
+            self.nobj = len(self.oindices)
+
         self.itobj = range(self.nobj)
 
         if self.epsilons is None:
             self.epsilons = [1e-9]*self.nobj
         elif len(self.epsilons) != self.nobj:
-            msg = "{0} epsilons specified, but found {1} columns".format(
+            msg = "{0} epsilons specified, but {1} objectives".format(
                     len(self.epsilons), self.nobj)
             raise SortParameterError(msg)
 
@@ -308,8 +306,13 @@ def filter_input(rows, **kwargs):
                 continue
 
         try:
-            if comment is not None and row[0].startswith(comment):
-                continue
+            if comment is not None:
+                iscomment = False
+                for commentchar in comment:
+                    if row[0].startswith(commentchar):
+                        iscomment = True
+                if iscomment:
+                    continue
         except AttributeError as err:
             if "startswith" in err.message:
                 # couldn't do starswith, maybe row is floats?
@@ -356,7 +359,7 @@ def get_args(argv):
                         default=False, help='print only objectives in output')
     parser.add_argument("--blank", action="store_true",
                         help="skip blank lines")
-    parser.add_argument("--comment", type=str,
+    parser.add_argument("-c", "--comment", type=str, nargs="+",
                         help="skip lines starting with this character")
     parser.add_argument("--header", type=int,
                         help="number of header lines to skip")
