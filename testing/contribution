@@ -1,3 +1,3 @@
 #!/bin/sh
 
-cat in3_a.txt | python${2} ../pareto.py - in3_b.txt in3_c.txt in3_d.txt in3_e.txt in3_f.txt -o 27-29 -e 0.1 0.1 0.1 --contribution ${1} > ou3.txt
+cat in3_a.txt | python${1} ../pareto.py - in3_b.txt in3_c.txt in3_d.txt in3_e.txt in3_f.txt -o 27-29 -e 0.1 0.1 0.1 --contribution > ou3.txt
