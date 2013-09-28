@@ -1,5 +1,5 @@
 """
-Copyright (C) 2013 Jon Herman, Matthew Woodruff, Patrick Reed, and others
+Copyright (C) 2013 Matthew Woodruff and Jon Herman.
 
 This script is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -23,11 +23,11 @@ script.
 
 For pareto.py:
 
-@misc{herman_woodruff_2013_pareto,
-    author = {Herman, Jon and Woodruff, Matthew},
+@misc{woodruff_herman_2013_pareto,
+    author = {Woodruff, Matthew and Herman, Jon},
     year = {2013},
     title = {pareto.py: a $\\varepsilon-nondomination$ sorting routine},
-    howpublished = {https://github.com/jdherman/pareto.py}
+    howpublished = {https://github.com/matthewjwoodruff/pareto.py}
 }
 
 For epsilon-nondomination:
