@@ -154,7 +154,7 @@ def intrange(arg):
 class SortParameterError(Exception): pass
 
 class Archive(object):
-    """ 
+    """
     An archive of epsilon-nondominated solutions.
     Allows auxiliary information to tag along for the sort
     process.
@@ -194,7 +194,7 @@ class Archive(object):
         tagalong:   data to preserve with the objectives.  Probably the actual
                     solution is here, the objectives having been extracted
                     and possibly transformed.  Tagalong data can be *anything*.
-                    We don't inspect it, just keep a reference to it for as 
+                    We don't inspect it, just keep a reference to it for as
                     long as the solution is in the archive, and then return
                     it in the end.
         """
@@ -206,7 +206,7 @@ class Archive(object):
         # return:   The candidate solution is dominated, stop comparing it to
         #           the archive, don't add it, immediately exit the method.
 
-        ebox = [math.floor(objectives[ii] / self.epsilons[ii]) 
+        ebox = [math.floor(objectives[ii] / self.epsilons[ii])
                 for ii in self.itobj]
 
         asize = len(self.archive)
@@ -245,7 +245,7 @@ class Archive(object):
             # solutions are in the same box
             aobj = self.archive[ai]
             corner = [ebox[ii] * self.epsilons[ii] for ii in self.itobj]
-            sdist = sum([(objectives[ii] - corner[ii]) **2 
+            sdist = sum([(objectives[ii] - corner[ii]) **2
                          for ii in self.itobj])
             adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
             if adist < sdist: # archive dominates
@@ -287,7 +287,6 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
 
     Duplicates some of cli() for a programmatic interface
     """
-    archive = Archive(epsilons, objectives)
     tables = [noannotation(table) for table in tables]
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
@@ -314,12 +313,17 @@ def eps_sort_solutions(tables, epsilons=None):
     tables: input (objectives, row) tuples
     epsilons: epsilon values for the objectives.  Assume 1e-9 if none
     """
+    # slip the first row off the first table to figure out nobj
+    objectives, row = next(tables[0])
+    table = [(objectives, row)]
+    tables = [table] + tables
+
+    nobj = len(objectives)
     if epsilons is None:
-        # slip the first row off the first table to figure out nobj
-        objectives, row = next(tables[0])
         epsilons = [1e-9] * len(objectives)
-        table = [(objectives, row)]
-        tables = [table] + tables
+    elif len(epsilons) != nobj:
+        msg = "{0} epsilons, but {1} objectives".format(len(epsilons), nobj)
+        raise SortParameterError(msg)
 
     archive = Archive(epsilons)
 
@@ -329,20 +333,20 @@ def eps_sort_solutions(tables, epsilons=None):
 
     return archive.tagalongs
 
-def attribution(stream, attribution, number=False):
+def attribution(stream, tag, number=False):
     """
-    extract lines from stream and augment with attribution
+    extract lines from stream and augment with tag
     """
     if number:
         linenumber = 0
         for line in stream:
             linenumber += 1
             line = line.strip()
-            yield (line, [attribution, str(linenumber)])
+            yield (line, [tag, str(linenumber)])
     else:
         for line in stream:
             line = line.strip()
-            yield (line, [attribution])
+            yield (line, [tag])
 
 def noattribution(stream):
     """
@@ -397,7 +401,7 @@ def withobjectives(annotatedrows, oindices):
             yield objectives, row
     else:
         for row, annot in annotatedrows:
-            objectives = [float[x] for x in row]
+            objectives = [float(x) for x in row]
             row.extend(annot)
             yield objectives, row
 
@@ -405,10 +409,10 @@ def maximize(solutions, mindices=None):
     """
     mindices: which objectives to maximize.  If None, maximize all.
 
-    These indices are indices into the list of objectives, not 
-    into the input row.  So if the objectives are 2, 3, 13, and 9, 
-    in that order, and you want to maximize column 2, specify 0 
-    to this function, and if you want to maximize column 13, 
+    These indices are indices into the list of objectives, not
+    into the input row.  So if the objectives are 2, 3, 13, and 9,
+    in that order, and you want to maximize column 2, specify 0
+    to this function, and if you want to maximize column 13,
     specify 2 to this function.
     """
     if mindices is None:
@@ -424,17 +428,17 @@ def maximize(solutions, mindices=None):
 def cli(args):
     """ command-line interface, execute the comparison """
     if args.contribution:
-        tables = [attribution(fp, fp.name, args.line_number) 
+        tables = [attribution(fp, fp.name, args.line_number)
                   for fp in args.inputs]
     else:
         tables = [noattribution(fp) for fp in args.inputs]
 
     if args.header > 0 or len(args.comment) > 0 or args.blank:
-        tables = [filter_lines(annotatedlines, comment=args.comment, 
-                              header=args.header, blank=args.blank) 
+        tables = [filter_lines(annotatedlines, comment=args.comment,
+                              header=args.header, blank=args.blank)
                   for annotatedlines in tables]
 
-    tables = [rowsof(annotatedlines, args.delimiter) 
+    tables = [rowsof(annotatedlines, args.delimiter)
               for annotatedlines in tables]
 
     tables = [withobjectives(annotatedrows, args.objectives)
