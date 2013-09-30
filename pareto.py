@@ -81,9 +81,9 @@ def get_args(argv):
                         default=False, help='print only objectives in output')
     parser.add_argument("--blank", action="store_true",
                         help="skip blank lines")
-    parser.add_argument("-c", "--comment", type=str, nargs="+",
+    parser.add_argument("-c", "--comment", type=str, nargs="+", default=[],
                         help="skip lines starting with this character")
-    parser.add_argument("--header", type=int,
+    parser.add_argument("--header", type=int, default=0
                         help="number of header lines to skip")
     parser.add_argument("--contribution", action="store_true",
                         help="append filename where solution originated")
@@ -180,7 +180,7 @@ class Archive(object):
         self.tagalongs.pop(index)
         self.boxes.pop(index)
 
-    def sortinto(self, objectives, tagalong):
+    def sortinto(self, objectives, tagalong=None):
         """
         Sort a solution into the archive.  Add it if it's nondominated
         w.r.t current solutions.
@@ -260,161 +260,190 @@ class SortInputError(Exception):
         self.row = row
         self.table = table
 
-def eps_sort(tables, objectives, epsilons):
+def noannotation(table):
+    """ produce solutions with no annotation from a table """
+    empty = []
+    for row in table:
+        yield (row, empty)
+
+def eps_sort(tables, objectives, epsilons, **kwargs):
     """
     Perform an epsilon-nondominated sort
     tables: input data, must support row iteration
     objectives: list of column indices in which objectives can be found,
                 if None default to all columns
     epsilons: list of epsilons for the sort, if None default to 1e-9
-    """
-    archive = Archive(epsilons, objectives)
-
-    # for each file in argument list ...
-    for counter in range(len(tables)):
-        solutions = tables[counter]
-        # for each line in file (new candidate solution) ...
-        rownumber = 0
-        for row in solutions:
-            try:
-                archive.sortinto(row)
-                rownumber += 1
-            except IndexError:
-                msg = "Not enough columns in row {0} of input {1}".format(
-                                               rownumber, counter)
-                raise SortInputError(msg, rownumber, counter)
-            except ValueError as ve:
-                msg = "{0} on row {1} of input {2}".format(
-                                                str(ve), rownumber, counter)
-                raise SortInputError(msg, rownumber, counter)
-
-    return archive
-
-def rowsof(stream, delimiter):
-    """
-    Generator function yielding rows read from a stream. (Lazy input.)
-    Avoids having to read the whole file at once.
-    """
-    try:
-        while True:
-            line = next(stream)
-            row = line.strip().split(delimiter)
-            yield row
-    except StopIteration:
-        pass
-
-def filter_input(rows, **kwargs):
-    """
-    Generator function filtering out rows.
-    Use rowsof by itself if you can, as it's faster.
-
-    rows: Anything that you can iterate over and get rows.
-          A row is also iterable, and expected to be strings.
-          Could be a rowsof generator.
 
     Keyword arguments:
-    *comment*       A character that, if it appears at the beginning of a row,
-                    indicates that the row should be skipped
-    *header*        Number of rows to skip at the beginning of the file.
-    *blank*         If True, ignore blank rows.  They are an error otherwise.
-    *contribution*  A tag to append to each row indicating where it came from.
-                    Can be anything printable.
-    *number*        Include line number in contribution if True.  Defaults to
-                    False.  Counts from 1 (because usual use case is files,
-                    where lines are conventionally numbered from 1.)
+    *maximize*      columns to maximize
+    *maximize_all*  maximize all columns
+
+    Duplicates some of cli() for a programmatic interface
     """
+    archive = Archive(epsilons, objectives)
+    tables = [noannotation(table) for table in tables]
+    tables = [withobjectives(annotatedrows, objectives)
+              for annotatedrows in tables]
 
-    comment = kwargs.get("comment", None)
+    maximize = kwargs.get("maximize", None)
+    maximize_all = kwargs.get("maximize_all", False)
+
+    if maximize is not None or maximize_all:
+        if objectives is None:
+            mindices = maximize
+        elif maximize_all:
+            mindices = None
+        else:
+            mindices = [args.objectives.index(i) for i in args.maximize]
+        tables = [maximize(solutions, mindices) for solutions in tables]
+
+    tagalongs = eps_sort_solutions(tables, args.epsilons)
+
+    return tagalongs
+
+def eps_sort_solutions(tables, epsilons=None):
+    """
+    Perform an epsilon-nondominated sort
+    tables: input (objectives, row) tuples
+    epsilons: epsilon values for the objectives.  Assume 1e-9 if none
+    """
+    if epsilons is None:
+        # slip the first row off the first table to figure out nobj
+        objectives, row = next(tables[0])
+        epsilons = [1e-9] * len(objectives)
+        table = [(objectives, row)]
+        tables = [table] + tables
+
+    archive = Archive(epsilons)
+
+    for table in tables:
+        for objectives, row in table:
+            archive.sortinto(objectives, row)
+
+    return archive.tagalongs
+
+def attribution(stream, attribution):
+    """
+    extract lines from stream and augment with attribution
+    """
+    linenumber = 0
+    for line in stream:
+        linenumber += 1
+        line = next(stream).strip()
+        yield (line, [attribution, linenumber])
+
+def noattribution(stream):
+    """
+    extract lines from stream and augment with null attribution
+    """
+    empty = []
+    for line in stream:
+        yield (next(stream).strip(), empty)
+
+def filter_lines(annotatedlines, **kwargs):
+    """
+    remove commented, blank, and header lines
+    """
+    comment = kwargs.get("comment", [])
     header = kwargs.get("header", 0)
-    if header is None:
-        header = 0
     blank = kwargs.get("blank", False)
-    contribution = kwargs.get("contribution", None)
-    number = kwargs.get("number", False)
 
-    counter = 1
+    for line, annot in annotatedlines:
 
-    for row in rows:
-        counter += 1
+        # skip header lines
         if header > 0:
             header -= 1
             continue
-        if blank:
-            if len(row) == 0:
-                continue
-            elif len(row) == 1 and len(row[0]) == 0:
-                continue
 
-        try:
-            if comment is not None:
-                iscomment = False
-                for commentchar in comment:
-                    if row[0].startswith(commentchar):
-                        iscomment = True
-                if iscomment:
-                    continue
-        except AttributeError as err:
-            if "startswith" in str(err):
-                # couldn't do starswith, maybe row is floats?
-                pass
-            else:
-                raise
+        # skip comment lines
+        iscomment = False
+        for commentchar in comment:
+            iscomment = iscomment or line.startswith(commentchar)
+        if iscomment:
+            continue
 
-        if contribution is not None:
-            row.append(str(contribution))
-            if number:
-                row.append(str(counter))
+        # skip blank lines
+        if blank and len(line) == 0:
+            continue
 
-        yield row
+        yield (line, annot)
 
-def use_filter(args):
-    """ return True if we need to use filtered input """
-    if args.header is not None:
-        return True
-    if args.comment is not None:
-        return True
-    if args.blank:
-        return True
-    if args.contribution:
-        return True
-    return False
+def rowsof(annotatedlines, delimiter):
+    """ split lines using delimiter, yielding annotated rows """
+    for line, annot in annotatedlines:
+        yield (line.split(delimiter), annot)
+
+def withobjectives(annotatedrows, oindices):
+    """ extract objectives and convert to float """
+    if oindices is not None:
+        for row, annot in annotatedrows:
+            objectives = []
+            for oo in oindices:
+                objectives.append(float(row[oo]))
+            row.extend(annot)
+            yield objectives, row
+    else:
+        for row, annot in annotatedrows:
+            objectives = [float[x] for x in row]
+            row.extend(annot)
+            yield objectives, row
+
+def maximize(solutions, mindices=None):
+    """
+    mindices: which objectives to maximize.  If None, maximize all.
+
+    These indices are indices into the list of objectives, not 
+    into the input row.  So if the objectives are 2, 3, 13, and 9, 
+    in that order, and you want to maximize column 2, specify 0 
+    to this function, and if you want to maximize column 13, 
+    specify 2 to this function.
+    """
+    if mindices is None:
+        for objectives, row in solutions:
+            objectives = [-x for x in objectives]
+            yield objectives, row
+    else:
+        for objectives, row in solutions:
+            for ii in mindices:
+                objectives[ii] = 0 - objectives[ii]
+            yield objectives, row
 
 def cli(args):
     """ command-line interface, execute the comparison """
+    if args.contribution:
+        tables = [attribution(fp, fp.name) for fp in args.inputs]
+    else:
+        tables = [noattribution(fp) for fp in args.inputs]
 
-    tables = [rowsof(fp, args.delimiter) for fp in args.inputs]
+    if args.header > 0 or len(args.comment) > 0 or args.blank:
+        tables = [filter_lines(annotatedlines, comment=args.comment, 
+                              header=args.header, blank=args.blank) 
+                  for annotatedlines in tables]
 
-    if use_filter(args):
-        if args.contribution:
-            tags = [i.name for i in args.inputs]
+    tables = [rowsof(annotatedlines, args.delimiter) 
+              for annotatedlines in tables]
+
+    tables = [withobjectives(annotatedrows, args.objectives)
+              for annotatedrows in tables]
+
+    if args.maximize is not None or args.maximize_all:
+        if args.objectives is None:
+            mindices = args.maximize
+        elif args.maximize_all:
+            mindices = None
         else:
-            tags = [None] * len(args.inputs)
-        tables = [filter_input(table, blank=args.blank, header=args.header,
-                               comment=args.comment, contribution=tag,
-                               number=args.line_number)
-                  for table, tag in zip(tables, tags)]
+            mindices = [args.objectives.index(i) for i in args.maximize]
+        tables = [maximize(solutions, mindices) for solutions in tables]
 
-    if args.epsilons is not None and args.objectives is not None:
-        if len(args.epsilons) != len(args.objectives):
-            msg = "{0} epsilons specified for {1} objectives".format(
-                    len(args.epsilons), len(args.objectives))
-            raise SortParameterError(msg)
-    epsilons = args.epsilons
-
-    try:
-        archive = eps_sort(tables, args.objectives, epsilons)
-    except SortInputError as sie:
-        table = args.inputs[sie.table].name
-        msg = str(sie).replace("input", table)
-        raise SortInputError(msg, sie.row, table)
+    tagalongs = eps_sort_solutions(tables, args.epsilons)
 
     if args.print_only_objectives and args.objectives is not None:
-        for row in archive.archive:
+        for row in tagalongs:
             obj = [row[ii] for ii in args.objectives]
             args.output.write(args.delimiter.join(obj))
             args.output.write("\n")
     else:
-        for row in archive.archive:
+        for row in tagalongs:
             args.output.write(args.delimiter.join(row))
             args.output.write("\n")
 
