@@ -337,7 +337,7 @@ def attribution(stream, attribution):
     for line in stream:
         linenumber += 1
         line = line.strip()
-        yield (line, [attribution, linenumber])
+        yield (line, [attribution, str(linenumber)])
 
 def noattribution(stream):
     """
