@@ -1,5 +1,5 @@
 """
-Copyright (C) 2013 Jon Herman, Matthew Woodruff, Patrick Reed, and others
+Copyright (C) 2013 Matthew Woodruff and Jon Herman.
 
 This script is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
@@ -23,11 +23,11 @@ script.
 
 For pareto.py:
 
-@misc{herman_woodruff_2013_pareto,
-    author = {Herman, Jon and Woodruff, Matthew},
+@misc{woodruff_herman_2013_pareto,
+    author = {Woodruff, Matthew and Herman, Jon},
     year = {2013},
     title = {pareto.py: a $\\varepsilon-nondomination$ sorting routine},
-    howpublished = {https://github.com/jdherman/pareto.py}
+    howpublished = {https://github.com/matthewjwoodruff/pareto.py}
 }
 
 For epsilon-nondomination:
@@ -56,124 +56,62 @@ import sys
 import math
 import argparse
 
-class SortParameterError(Exception): pass
+def get_args(argv):
+    """ Get command line arguments """
+    prog = argv.pop(0)
+    parser = argparse.ArgumentParser(prog=prog,
+        description='Nondomination Sort for Multiple Files')
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+',
+                        help='input filenames, use - for standard input')
+    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
+                        help='objective columns (zero-indexed)')
+    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
+                        help='epsilons, one per objective')
+    parser.add_argument('-m', '--maximize', type=intrange, nargs='+',
+                        help='objective columns to maximize')
+    parser.add_argument('-M', '--maximize-all', action="store_true",
+                        help='maximize all objectives')
+    parser.add_argument('--output', type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        help='output filename, default to standard output')
 
-class Archive(object):
-    """ An archive of epsilon-nondominated solutions """
-    def __init__(self, epsilons, oindices):
-        """
-        epsilons: sizes of epsilon boxes to use in the sort
-        oindices: indicate which indices in a solution are objectives
-        """
-        self.archive = []
-        self.boxes = [] # remember boxes
-        self.objectives = [] # remember objectives
-        self.sortinto = self._initialsortinto
-        self.epsilons = epsilons
-        self.oindices = oindices
-        self.nobj = 0
-        self.itobj = range(self.nobj)
+    delimiters = parser.add_mutually_exclusive_group()
+    delimiters.add_argument('-d', '--delimiter', type=str, default=' ',
+                        help='input column delimiter, default to space (" ")')
+    delimiters.add_argument('--tabs', action="store_true",
+                        help="use tabs as delimiter")
 
-    def add(self, solution, sobj, sbox):
-        """ add a solution to the archive, plus auxiliary information """
-        self.archive.append(solution)
-        self.objectives.append(sobj)
-        self.boxes.append(sbox)
+    parser.add_argument('--print-only-objectives', action='store_true',
+                        default=False, help='print only objectives in output')
+    parser.add_argument("--blank", action="store_true",
+                        help="skip blank lines")
+    parser.add_argument("-c", "--comment", type=str, nargs="+", default=[],
+                        help="skip lines starting with this character")
+    parser.add_argument("--header", type=int, default=0,
+                        help="number of header lines to skip")
+    parser.add_argument("--contribution", action="store_true",
+                        help="append filename where solution originated")
+    parser.add_argument("--line-number", action="store_true",
+                        help="also append line number to solution if "\
+                             "--contribution is used.")
+    args = parser.parse_args(argv)
 
-    def remove(self, index):
-        """ remove a solution from the archive """
-        self.archive.pop(index)
-        self.objectives.pop(index)
-        self.boxes.pop(index)
+    args.objectives = rerange(args.objectives)
+    args.maximize = rerange(args.maximize)
 
-    def _initialsortinto(self, solution):
-        """
-        Gets called the very first time, to establish the
-        number of objectives and what the epsilons are.
-        """
-        if self.oindices is None:
-            self.nobj = len(solution)
-            self.oindices = range(self.nobj)
-        else:
-            self.nobj = len(self.oindices)
+    if args.tabs:
+        args.delimiter = "\t"
 
-        self.itobj = range(self.nobj)
+    return args
 
-        if self.epsilons is None:
-            self.epsilons = [1e-9]*self.nobj
-        elif len(self.epsilons) != self.nobj:
-            msg = "{0} epsilons specified, but {1} objectives".format(
-                    len(self.epsilons), self.nobj)
-            raise SortParameterError(msg)
-
-        self.sortinto = self._realsortinto
-        self.sortinto(solution)
-
-    def _realsortinto(self, solution):
-        """
-        Sort a solution into the archive.  Add it if it's nondominated
-        w.r.t current solutions.
-        """
-        # Here's how the early loop exits in this code work:
-        # break:    Stop iterating the box comparison for loop because we know
-        #           the solutions are in relatively nondominated boxes.
-        # continue: Start the next while loop iteration immediately (i.e.
-        #           jump ahead to the comparison with the next archive member).
-        # return:   The candidate solution is dominated, stop comparing it to
-        #           the archive, don't add it, immediately exit the method.
-
-        sobj = [float(solution[ii]) for ii in self.oindices]
-        sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
-
-        asize = len(self.archive)
-
-        ai = -1
-        while ai < asize - 1:
-            ai += 1
-            adominate = False # archive dominates
-            sdominate = False # solution dominates
-            nondominate = False # neither dominates
-
-            abox = self.boxes[ai]
-
-            for oo in self.itobj:
-                if abox[oo] < sbox[oo]:
-                    adominate = True
-                    if sdominate: # nondomination
-                        nondominate = True
-                        break # for
-                elif abox[oo] > sbox[oo]:
-                    sdominate = True
-                    if adominate: # nondomination
-                        nondominate = True
-                        break # for
-
-            if nondominate:
-                continue # while
-            if adominate: # candidate solution was dominated
-                return
-            if sdominate: # candidate solution dominated archive solution
-                self.remove(ai)
-                ai -= 1
-                asize -= 1
-                continue # while
-
-            # solutions are in the same box
-            aobj = self.objectives[ai]
-            corner = [sbox[ii] * self.epsilons[ii] for ii in self.itobj]
-            sdist = sum([(sobj[ii] - corner[ii]) **2 for ii in self.itobj])
-            adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
-            if adist < sdist: # archive dominates
-                return
-            else: # solution dominates
-                self.remove(ai)
-                ai -= 1
-                asize -= 1
-                # Need a continue here if we ever reorder the while loop.
-                continue # while
-
-        # if you get here, then no archive solution has dominated this one
-        self.add(solution, sobj, sbox)
+def rerange(intranges):
+    """ convert a set of intranges into a list of integers """
+    if intranges is None:
+        return None
+    thelist = []
+    for therange in intranges:
+        thelist.extend(therange)
+    return thelist
 
 def intrange(arg):
     """ convert a command-line argument to a list of integers """
@@ -213,6 +151,115 @@ def intrange(arg):
     else:
         return range(first, second+1)
 
+class SortParameterError(Exception): pass
+
+class Archive(object):
+    """
+    An archive of epsilon-nondominated solutions.
+    Allows auxiliary information to tag along for the sort
+    process.
+
+    The eps_sort function provides a much more convenient interface than
+    the Archive class.
+    """
+    def __init__(self, epsilons):
+        """
+        epsilons: sizes of epsilon boxes to use in the sort.  Number
+                  of objectives is inferred by the number of epsilons.
+        """
+        self.archive = []       # objectives
+        self.tagalongs = []     # tag-along data
+        self.boxes = []         # remember for efficiency
+        self.epsilons = epsilons
+        self.itobj = range(len(epsilons)) # infer number of objectives
+
+    def add(self, objectives, tagalong, ebox):
+        """ add a solution to the archive, plus auxiliary information """
+        self.archive.append(objectives)
+        self.tagalongs.append(tagalong)
+        self.boxes.append(ebox)
+
+    def remove(self, index):
+        """ remove a solution from the archive """
+        self.archive.pop(index)
+        self.tagalongs.pop(index)
+        self.boxes.pop(index)
+
+    def sortinto(self, objectives, tagalong=None):
+        """
+        Sort a solution into the archive.  Add it if it's nondominated
+        w.r.t current solutions.
+
+        objectives: objectives by which to sort.  Minimization is assumed.
+        tagalong:   data to preserve with the objectives.  Probably the actual
+                    solution is here, the objectives having been extracted
+                    and possibly transformed.  Tagalong data can be *anything*.
+                    We don't inspect it, just keep a reference to it for as
+                    long as the solution is in the archive, and then return
+                    it in the end.
+        """
+        # Here's how the early loop exits in this code work:
+        # break:    Stop iterating the box comparison for loop because we know
+        #           the solutions are in relatively nondominated boxes.
+        # continue: Start the next while loop iteration immediately (i.e.
+        #           jump ahead to the comparison with the next archive member).
+        # return:   The candidate solution is dominated, stop comparing it to
+        #           the archive, don't add it, immediately exit the method.
+
+        ebox = [math.floor(objectives[ii] / self.epsilons[ii])
+                for ii in self.itobj]
+
+        asize = len(self.archive)
+
+        ai = -1 # ai: archive index
+        while ai < asize - 1:
+            ai += 1
+            adominate = False # archive dominates
+            sdominate = False # solution dominates
+            nondominate = False # neither dominates
+
+            abox = self.boxes[ai]
+
+            for oo in self.itobj:
+                if abox[oo] < ebox[oo]:
+                    adominate = True
+                    if sdominate: # nondomination
+                        nondominate = True
+                        break # for
+                elif abox[oo] > ebox[oo]:
+                    sdominate = True
+                    if adominate: # nondomination
+                        nondominate = True
+                        break # for
+
+            if nondominate:
+                continue # while
+            if adominate: # candidate solution was dominated
+                return
+            if sdominate: # candidate solution dominated archive solution
+                self.remove(ai)
+                ai -= 1
+                asize -= 1
+                continue # while
+
+            # solutions are in the same box
+            aobj = self.archive[ai]
+            corner = [ebox[ii] * self.epsilons[ii] for ii in self.itobj]
+            sdist = sum([(objectives[ii] - corner[ii]) **2
+                         for ii in self.itobj])
+            adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
+            if adist < sdist: # archive dominates
+                return
+            else: # solution dominates
+                self.remove(ai)
+                ai -= 1
+                asize -= 1
+                # Need a continue here if we ever reorder the while loop.
+                continue # while
+
+        # if you get here, then no archive solution has dominated this one
+        self.add(objectives, tagalong, ebox)
+
 class SortInputError(Exception):
     """ Information about a defective input """
     def __init__(self, msg, row, table):
@@ -220,200 +267,201 @@ class SortInputError(Exception):
         self.row = row
         self.table = table
 
-def eps_sort(tables, objectives, epsilons):
+def noannotation(table):
+    """ produce solutions with no annotation from a table """
+    empty = []
+    for row in table:
+        yield (row, empty)
+
+def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
     Perform an epsilon-nondominated sort
     tables: input data, must support row iteration
     objectives: list of column indices in which objectives can be found,
                 if None default to all columns
     epsilons: list of epsilons for the sort, if None default to 1e-9
-    """
-    archive = Archive(epsilons, objectives)
-
-    # for each file in argument list ...
-    for counter in range(len(tables)):
-        solutions = tables[counter]
-        # for each line in file (new candidate solution) ...
-        rownumber = 0
-        for row in solutions:
-            try:
-                archive.sortinto(row)
-                rownumber += 1
-            except IndexError:
-                msg = "Not enough columns in row {0} of input {1}".format(
-                                               rownumber, counter)
-                raise SortInputError(msg, rownumber, counter)
-            except ValueError as ve:
-                msg = "{0} on row {1} of input {2}".format(
-                                                ve.message, rownumber, counter)
-                raise SortInputError(msg, rownumber, counter)
-
-    return archive
-
-def rowsof(stream, delimiter):
-    """
-    Generator function yielding rows read from a stream. (Lazy input.)
-    Avoids having to read the whole file at once.
-    """
-    try:
-        while True:
-            line = next(stream)
-            row = line.strip().split(delimiter)
-            yield row
-    except StopIteration:
-        pass
-
-def filter_input(rows, **kwargs):
-    """
-    Generator function filtering out rows.
-    Use rowsof by itself if you can, as it's faster.
-
-    rows: Anything that you can iterate over and get rows.
-          A row is also iterable, and expected to be strings.
-          Could be a rowsof generator.
 
     Keyword arguments:
-    *comment*       A character that, if it appears at the beginning of a row,
-                    indicates that the row should be skipped
-    *header*        Number of rows to skip at the beginning of the file.
-    *blank*         If True, ignore blank rows.  They are an error otherwise.
-    *contribution*  A tag to append to each row indicating where it came from.
-                    Can be anything printable.
-    *number*        Include line number in contribution if True.  Defaults to
-                    False.  Counts from 1 (because usual use case is files,
-                    where lines are conventionally numbered from 1.)
+    *maximize*      columns to maximize
+    *maximize_all*  maximize all columns
+
+    Duplicates some of cli() for a programmatic interface
     """
+    tables = [noannotation(table) for table in tables]
+    tables = [withobjectives(annotatedrows, objectives)
+              for annotatedrows in tables]
 
-    comment = kwargs.get("comment", None)
+    tomaximize = kwargs.get("maximize", None)
+    maximize_all = kwargs.get("maximize_all", False)
+
+    if tomaximize is not None or maximize_all:
+        if objectives is None:
+            mindices = tomaximize
+        elif maximize_all:
+            mindices = None
+        else:
+            mindices = [objectives.index(i) for i in tomaximize]
+        tables = [maximize(solutions, mindices) for solutions in tables]
+
+    tagalongs = eps_sort_solutions(tables, epsilons)
+
+    return tagalongs
+
+def eps_sort_solutions(tables, epsilons=None):
+    """
+    Perform an epsilon-nondominated sort
+    tables: input (objectives, row) tuples
+    epsilons: epsilon values for the objectives.  Assume 1e-9 if none
+    """
+    # slip the first row off the first table to figure out nobj
+    objectives, row = next(tables[0])
+    table = [(objectives, row)]
+    tables = [table] + tables
+
+    nobj = len(objectives)
+    if epsilons is None:
+        epsilons = [1e-9] * len(objectives)
+    elif len(epsilons) != nobj:
+        msg = "{0} epsilons, but {1} objectives".format(len(epsilons), nobj)
+        raise SortParameterError(msg)
+
+    archive = Archive(epsilons)
+
+    for table in tables:
+        for objectives, row in table:
+            archive.sortinto(objectives, row)
+
+    return archive.tagalongs
+
+def attribution(stream, tag, number=False):
+    """
+    extract lines from stream and augment with tag
+    """
+    if number:
+        linenumber = 0
+        for line in stream:
+            linenumber += 1
+            line = line.strip()
+            yield (line, [tag, str(linenumber)])
+    else:
+        for line in stream:
+            line = line.strip()
+            yield (line, [tag])
+
+def noattribution(stream):
+    """
+    extract lines from stream and augment with null attribution
+    """
+    empty = []
+    for line in stream:
+        line = line.strip()
+        yield (line, empty)
+
+def filter_lines(annotatedlines, **kwargs):
+    """
+    remove commented, blank, and header lines
+    """
+    comment = kwargs.get("comment", [])
     header = kwargs.get("header", 0)
-    if header is None:
-        header = 0
     blank = kwargs.get("blank", False)
-    contribution = kwargs.get("contribution", None)
-    number = kwargs.get("number", False)
 
-    counter = 1
+    for line, annot in annotatedlines:
 
-    for row in rows:
-        counter += 1
+        # skip header lines
         if header > 0:
             header -= 1
             continue
-        if blank:
-            if len(row) == 0:
-                continue
-            elif len(row) == 1 and len(row[0]) == 0:
-                continue
 
-        try:
-            if comment is not None:
-                iscomment = False
-                for commentchar in comment:
-                    if row[0].startswith(commentchar):
-                        iscomment = True
-                if iscomment:
-                    continue
-        except AttributeError as err:
-            if "startswith" in err.message:
-                # couldn't do starswith, maybe row is floats?
-                pass
-            else:
-                raise
+        # skip comment lines
+        iscomment = False
+        for commentchar in comment:
+            iscomment = iscomment or line.startswith(commentchar)
+        if iscomment:
+            continue
 
-        if contribution is not None:
-            row.append(str(contribution))
-            if number:
-                row.append(str(counter))
+        # skip blank lines
+        if blank and len(line) == 0:
+            continue
 
-        yield row
+        yield (line, annot)
 
-def use_filter(args):
-    """ return True if we need to use filtered input """
-    if args.header is not None:
-        return True
-    if args.comment is not None:
-        return True
-    if args.blank:
-        return True
-    if args.contribution:
-        return True
-    return False
+def rowsof(annotatedlines, delimiter):
+    """ split lines using delimiter, yielding annotated rows """
+    for line, annot in annotatedlines:
+        yield (line.split(delimiter), annot)
 
-def get_args(argv):
-    """ Get command line arguments """
-    prog = argv.pop(0)
-    parser = argparse.ArgumentParser(prog=prog,
-        description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+', 
-                        help='input filenames, use - for standard input')
-    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
-                        help='objective columns (zero-indexed)')
-    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
-                        help='epsilons, one per objective')
-    parser.add_argument('--output', type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help='output filename, default to standard output')
-    parser.add_argument('--delimiter', type=str, default=' ',
-                        help='input column delimiter, default to space (" ")')
-    parser.add_argument('--print-only-objectives', action='store_true',
-                        default=False, help='print only objectives in output')
-    parser.add_argument("--blank", action="store_true",
-                        help="skip blank lines")
-    parser.add_argument("-c", "--comment", type=str, nargs="+",
-                        help="skip lines starting with this character")
-    parser.add_argument("--header", type=int,
-                        help="number of header lines to skip")
-    parser.add_argument("--contribution", action="store_true",
-                        help="append filename where solution originated")
-    parser.add_argument("--line-number", action="store_true",
-                        help="also append line number to solution if "\
-                             "--contribution is used.")
-    args = parser.parse_args(argv)
+def withobjectives(annotatedrows, oindices):
+    """ extract objectives and convert to float """
+    if oindices is not None:
+        for row, annot in annotatedrows:
+            objectives = []
+            for oo in oindices:
+                objectives.append(float(row[oo]))
+            row.extend(annot)
+            yield objectives, row
+    else:
+        for row, annot in annotatedrows:
+            objectives = [float(x) for x in row]
+            row.extend(annot)
+            yield objectives, row
 
-    if args.objectives is not None:
-        objectives = []
-        for indexrange in args.objectives:
-            objectives.extend(indexrange)
-        args.objectives = objectives
+def maximize(solutions, mindices=None):
+    """
+    mindices: which objectives to maximize.  If None, maximize all.
 
-    return args
+    These indices are indices into the list of objectives, not
+    into the input row.  So if the objectives are 2, 3, 13, and 9,
+    in that order, and you want to maximize column 2, specify 0
+    to this function, and if you want to maximize column 13,
+    specify 2 to this function.
+    """
+    if mindices is None:
+        for objectives, row in solutions:
+            objectives = [-x for x in objectives]
+            yield objectives, row
+    else:
+        for objectives, row in solutions:
+            for ii in mindices:
+                objectives[ii] = 0 - objectives[ii]
+            yield objectives, row
 
 def cli(args):
     """ command-line interface, execute the comparison """
+    if args.contribution:
+        tables = [attribution(fp, fp.name, args.line_number)
+                  for fp in args.inputs]
+    else:
+        tables = [noattribution(fp) for fp in args.inputs]
 
-    tables = [rowsof(fp, args.delimiter) for fp in args.inputs]
+    if args.header > 0 or len(args.comment) > 0 or args.blank:
+        tables = [filter_lines(annotatedlines, comment=args.comment,
+                              header=args.header, blank=args.blank)
+                  for annotatedlines in tables]
 
-    if use_filter(args):
-        if args.contribution:
-            tags = [i.name for i in args.inputs]
+    tables = [rowsof(annotatedlines, args.delimiter)
+              for annotatedlines in tables]
+
+    tables = [withobjectives(annotatedrows, args.objectives)
+              for annotatedrows in tables]
+
+    if args.maximize is not None or args.maximize_all:
+        if args.objectives is None:
+            mindices = args.maximize
+        elif args.maximize_all:
+            mindices = None
         else:
-            tags = [None] * len(args.inputs)
-        tables = [filter_input(table, blank=args.blank, header=args.header,
-                               comment=args.comment, contribution=tag,
-                               number=args.line_number)
-                  for table, tag in zip(tables, tags)]
+            mindices = [args.objectives.index(i) for i in args.maximize]
+        tables = [maximize(solutions, mindices) for solutions in tables]
 
-    if args.epsilons is not None and args.objectives is not None:
-        if len(args.epsilons) != len(args.objectives):
-            msg = "{0} epsilons specified for {1} objectives".format(
-                    len(args.epsilons), len(args.objectives))
-            raise SortParameterError(msg)
-    epsilons = args.epsilons
-
-    try:
-        archive = eps_sort(tables, args.objectives, epsilons)
-    except SortInputError as sie:
-        table = args.inputs[sie.table].name
-        msg = sie.message.replace("input", table)
-        raise SortInputError(msg, sie.row, table)
+    tagalongs = eps_sort_solutions(tables, args.epsilons)
 
     if args.print_only_objectives and args.objectives is not None:
-        for row in archive.archive:
+        for row in tagalongs:
             obj = [row[ii] for ii in args.objectives]
             args.output.write(args.delimiter.join(obj))
             args.output.write("\n")
     else:
-        for row in archive.archive:
+        for row in tagalongs:
             args.output.write(args.delimiter.join(row))
             args.output.write("\n")
 
