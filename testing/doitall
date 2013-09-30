@@ -33,12 +33,15 @@ printf "\ntabs\n"
 time python${1} ../pareto.py --tabs in3_tabs.txt -o 27-29 -e 0.1 0.1 0.1 | sed -e "s/\\t/ /g" | sort | diff a -
 
 printf "\ntwo-objective contortions\n"
-time sed "s/ /\\t/" in2.txt | python ../pareto.py - --tabs -M | wc -l
-time python ../pareto.py in2.txt --delimiter=" " -m 0 1 | wc -l
+time sed "s/ /\\t/" in2.txt | python${1} ../pareto.py - --tabs -M | wc -l
+time python${1} ../pareto.py in2.txt --delimiter=" " -m 0 1 | wc -l
 
 printf "\nWrong number of epsilons, should fail informatively...\n"
-python ../pareto.py in2.txt -m 0 1 -e 0.1
-python ../pareto.py in2.txt -e 0.1
+python${1} ../pareto.py in2.txt -m 0 1 -e 0.1
+python${1} ../pareto.py in2.txt -e 0.1
 
 printf "\nWrong number of objectives, should fail informatively...\n"
-python ../pareto.py in2.txt -m 0-2
+python${1} ../pareto.py in2.txt -m 0-2
+
+printf "\nMaximize random objective to make sure indexing doesn't cause Exceptions...\n"
+python${1} ../pareto.py in10.txt -o 27-30 31 32-36 -e 0.15 30.0 6.0 0.03 30.0 3000.0 150.0 0.3 3.0 0.3 -m 31 > travesty.txt
