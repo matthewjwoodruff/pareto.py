@@ -59,60 +59,49 @@ import argparse
 class SortParameterError(Exception): pass
 
 class Archive(object):
-    """ An archive of epsilon-nondominated solutions """
-    def __init__(self, epsilons, oindices):
-        """
-        epsilons: sizes of epsilon boxes to use in the sort
-        oindices: indicate which indices in a solution are objectives
-        """
-        self.archive = []
-        self.boxes = [] # remember boxes
-        self.objectives = [] # remember objectives
-        self.sortinto = self._initialsortinto
-        self.epsilons = epsilons
-        self.oindices = oindices
-        self.nobj = 0
-        self.itobj = range(self.nobj)
+    """ 
+    An archive of epsilon-nondominated solutions.
+    Allows auxiliary information to tag along for the sort
+    process.
 
-    def add(self, solution, sobj, sbox):
+    The eps_sort function provides a much more convenient interface than
+    the Archive class.
+    """
+    def __init__(self, epsilons):
+        """
+        epsilons: sizes of epsilon boxes to use in the sort.  Number
+                  of objectives is inferred by the number of epsilons.
+        """
+        self.archive = []       # objectives
+        self.tagalongs = []     # tag-along data
+        self.boxes = []         # remember for efficiency
+        self.epsilons = epsilons
+        self.itobj = range(len(epsilons)) # infer number of objectives
+
+    def add(self, objectives, tagalong, ebox):
         """ add a solution to the archive, plus auxiliary information """
-        self.archive.append(solution)
-        self.objectives.append(sobj)
-        self.boxes.append(sbox)
+        self.archive.append(objectives)
+        self.tagalongs.append(tagalong)
+        self.boxes.append(ebox)
 
     def remove(self, index):
         """ remove a solution from the archive """
         self.archive.pop(index)
-        self.objectives.pop(index)
+        self.tagalongs.pop(index)
         self.boxes.pop(index)
 
-    def _initialsortinto(self, solution):
-        """
-        Gets called the very first time, to establish the
-        number of objectives and what the epsilons are.
-        """
-        if self.oindices is None:
-            self.nobj = len(solution)
-            self.oindices = range(self.nobj)
-        else:
-            self.nobj = len(self.oindices)
-
-        self.itobj = range(self.nobj)
-
-        if self.epsilons is None:
-            self.epsilons = [1e-9]*self.nobj
-        elif len(self.epsilons) != self.nobj:
-            msg = "{0} epsilons specified, but {1} objectives".format(
-                    len(self.epsilons), self.nobj)
-            raise SortParameterError(msg)
-
-        self.sortinto = self._realsortinto
-        self.sortinto(solution)
-
-    def _realsortinto(self, solution):
+    def sortinto(self, objectives, tagalong):
         """
         Sort a solution into the archive.  Add it if it's nondominated
         w.r.t current solutions.
+
+        objectives: objectives by which to sort.  Minimization is assumed.
+        tagalong:   data to preserve with the objectives.  Probably the actual
+                    solution is here, the objectives having been extracted
+                    and possibly transformed.  Tagalong data can be *anything*.
+                    We don't inspect it, just keep a reference to it for as 
+                    long as the solution is in the archive, and then return
+                    it in the end.
         """
         # Here's how the early loop exits in this code work:
         # break:    Stop iterating the box comparison for loop because we know
@@ -122,12 +111,11 @@ class Archive(object):
         # return:   The candidate solution is dominated, stop comparing it to
         #           the archive, don't add it, immediately exit the method.
 
-        sobj = [float(solution[ii]) for ii in self.oindices]
-        sbox = [math.floor(sobj[ii] / self.epsilons[ii]) for ii in self.itobj]
+        ebox = [math.floor(objectives[ii] / self.epsilons[ii]) for ii in self.itobj]
 
         asize = len(self.archive)
 
-        ai = -1
+        ai = -1 # ai: archive index
         while ai < asize - 1:
             ai += 1
             adominate = False # archive dominates
@@ -137,12 +125,12 @@ class Archive(object):
             abox = self.boxes[ai]
 
             for oo in self.itobj:
-                if abox[oo] < sbox[oo]:
+                if abox[oo] < ebox[oo]:
                     adominate = True
                     if sdominate: # nondomination
                         nondominate = True
                         break # for
-                elif abox[oo] > sbox[oo]:
+                elif abox[oo] > ebox[oo]:
                     sdominate = True
                     if adominate: # nondomination
                         nondominate = True
@@ -159,9 +147,9 @@ class Archive(object):
                 continue # while
 
             # solutions are in the same box
-            aobj = self.objectives[ai]
-            corner = [sbox[ii] * self.epsilons[ii] for ii in self.itobj]
-            sdist = sum([(sobj[ii] - corner[ii]) **2 for ii in self.itobj])
+            aobj = self.archive[ai]
+            corner = [ebox[ii] * self.epsilons[ii] for ii in self.itobj]
+            sdist = sum([(objectives[ii] - corner[ii]) **2 for ii in self.itobj])
             adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
             if adist < sdist: # archive dominates
                 return
@@ -173,7 +161,7 @@ class Archive(object):
                 continue # while
 
         # if you get here, then no archive solution has dominated this one
-        self.add(solution, sobj, sbox)
+        self.add(objectives, tagalong, ebox)
 
 def intrange(arg):
     """ convert a command-line argument to a list of integers """
