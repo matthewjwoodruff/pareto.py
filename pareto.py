@@ -56,6 +56,96 @@ import sys
 import math
 import argparse
 
+def get_args(argv):
+    """ Get command line arguments """
+    prog = argv.pop(0)
+    parser = argparse.ArgumentParser(prog=prog,
+        description='Nondomination Sort for Multiple Files')
+    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+',
+                        help='input filenames, use - for standard input')
+    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
+                        help='objective columns (zero-indexed)')
+    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
+                        help='epsilons, one per objective')
+    parser.add_argument('--output', type=argparse.FileType('w'),
+                        default=sys.stdout,
+                        help='output filename, default to standard output')
+
+    delimiters = parser.add_mutually_exclusive_group()
+    delimiters.add_argument('-d', '--delimiter', type=str, default=' ',
+                        help='input column delimiter, default to space (" ")')
+    delimiters.add_argument('--tabs', action="store_true",
+                        help="use tabs as delimiter")
+
+    parser.add_argument('--print-only-objectives', action='store_true',
+                        default=False, help='print only objectives in output')
+    parser.add_argument("--blank", action="store_true",
+                        help="skip blank lines")
+    parser.add_argument("-c", "--comment", type=str, nargs="+",
+                        help="skip lines starting with this character")
+    parser.add_argument("--header", type=int,
+                        help="number of header lines to skip")
+    parser.add_argument("--contribution", action="store_true",
+                        help="append filename where solution originated")
+    parser.add_argument("--line-number", action="store_true",
+                        help="also append line number to solution if "\
+                             "--contribution is used.")
+    args = parser.parse_args(argv)
+
+    args.objectives = rerange(args.objectives)
+
+    if args.tabs:
+        args.delimiter = "\t"
+
+    return args
+
+def rerange(intranges):
+    """ convert a set of intranges into a list of integers """
+    if intranges is None:
+        return None
+    thelist = []
+    for therange in intranges:
+        thelist.extend(therange)
+    return thelist
+
+def intrange(arg):
+    """ convert a command-line argument to a list of integers """
+    acceptable_chars = [str(x) for x in range(10)]
+    acceptable_chars.append("-")
+
+    partial = []
+    first = None
+
+    msg = "Could not convert {0} to index range.".format(arg)
+    err = TypeError(msg)
+
+    for char in arg:
+        if char not in acceptable_chars:
+            raise err
+        if char == "-":
+            if len(partial) == 0:
+                raise err
+            elif first is None:
+                first = int("".join(partial))
+                partial = []
+            else: # this means there's a second -, which is not ok
+                raise err
+        else:
+            partial.append(char)
+
+    second = None
+    if first is None:
+        first = int("".join(partial))
+    elif len(partial) == 0:
+        raise err
+    else:
+        second = int("".join(partial))
+
+    if second is None:
+        return [first]
+    else:
+        return range(first, second+1)
+
 class SortParameterError(Exception): pass
 
 class Archive(object):
@@ -162,44 +252,6 @@ class Archive(object):
 
         # if you get here, then no archive solution has dominated this one
         self.add(objectives, tagalong, ebox)
-
-def intrange(arg):
-    """ convert a command-line argument to a list of integers """
-    acceptable_chars = [str(x) for x in range(10)]
-    acceptable_chars.append("-")
-
-    partial = []
-    first = None
-
-    msg = "Could not convert {0} to index range.".format(arg)
-    err = TypeError(msg)
-
-    for char in arg:
-        if char not in acceptable_chars:
-            raise err
-        if char == "-":
-            if len(partial) == 0:
-                raise err
-            elif first is None:
-                first = int("".join(partial))
-                partial = []
-            else: # this means there's a second -, which is not ok
-                raise err
-        else:
-            partial.append(char)
-
-    second = None
-    if first is None:
-        first = int("".join(partial))
-    elif len(partial) == 0:
-        raise err
-    else:
-        second = int("".join(partial))
-
-    if second is None:
-        return [first]
-    else:
-        return range(first, second+1)
 
 class SortInputError(Exception):
     """ Information about a defective input """
@@ -326,53 +378,6 @@ def use_filter(args):
     if args.contribution:
         return True
     return False
-
-def get_args(argv):
-    """ Get command line arguments """
-    prog = argv.pop(0)
-    parser = argparse.ArgumentParser(prog=prog,
-        description='Nondomination Sort for Multiple Files')
-    parser.add_argument('inputs', type=argparse.FileType('r'), nargs='+',
-                        help='input filenames, use - for standard input')
-    parser.add_argument('-o', '--objectives', type=intrange, nargs='+',
-                        help='objective columns (zero-indexed)')
-    parser.add_argument('-e', '--epsilons', type=float, nargs='+',
-                        help='epsilons, one per objective')
-    parser.add_argument('--output', type=argparse.FileType('w'),
-                        default=sys.stdout,
-                        help='output filename, default to standard output')
-
-    delimiters = parser.add_mutually_exclusive_group()
-    delimiters.add_argument('-d', '--delimiter', type=str, default=' ',
-                        help='input column delimiter, default to space (" ")')
-    delimiters.add_argument('--tabs', action="store_true",
-                        help="use tabs as delimiter")
-
-    parser.add_argument('--print-only-objectives', action='store_true',
-                        default=False, help='print only objectives in output')
-    parser.add_argument("--blank", action="store_true",
-                        help="skip blank lines")
-    parser.add_argument("-c", "--comment", type=str, nargs="+",
-                        help="skip lines starting with this character")
-    parser.add_argument("--header", type=int,
-                        help="number of header lines to skip")
-    parser.add_argument("--contribution", action="store_true",
-                        help="append filename where solution originated")
-    parser.add_argument("--line-number", action="store_true",
-                        help="also append line number to solution if "\
-                             "--contribution is used.")
-    args = parser.parse_args(argv)
-
-    if args.objectives is not None:
-        objectives = []
-        for indexrange in args.objectives:
-            objectives.extend(indexrange)
-        args.objectives = objectives
-
-    if args.tabs:
-        args.delimiter = "\t"
-
-    return args
 
 def cli(args):
     """ command-line interface, execute the comparison """
