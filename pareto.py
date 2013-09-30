@@ -52,6 +52,33 @@ For a fast nondominated sort:
 }
 """
 
+# Alright, I think we can agree that everything can be made to work 
+# really well *if we specify objectives*
+# I'm at the point where I want to rip out _initialsortinto and 
+# purge the Archive class of crap.
+# Now, if we don't specify objectives, what breaks?
+# The archive needs somebody to tell it what the objectives are.
+# That's right and proper.  So eps_sort does the inference, and
+# in doing so it takes the first row off of the first table, so
+# it puts that row in its own table.
+# OK, so now it's a problem for eps_sort, not the archive.
+# And the problem is, we've already monkeyed with the row by the
+# time it gets there.  Maybe I need to push the "secret extra
+# table" back to the cli function?  Because this is only ever
+# a problem for command-line invocation.  Otherwise if you've 
+# monkeyed with your table before calling eps_sort, you're 
+# naturally obliged to specify the objectives your damn self.
+# So when does this happen, that I lift a row from the first 
+# input table?  If I do it before I call filter_inputs, it messes
+# up the line numbers for the whole first table, plus I might
+# sample the table by mistake.  So I need to have the filtered
+# row instead.  But this is the row I've monkeyed with already!
+# Now how do I figure out how long it was before I pulled my 
+# shenanigans?  Maybe filter_inputs need to yield the pure 
+# row plus monkey business, and let cli combine them.
+# It breaks generator chaining, but it makes everything else 
+# easier.
+
 import sys
 import math
 import argparse
@@ -91,6 +118,19 @@ class Archive(object):
         Gets called the very first time, to establish the
         number of objectives and what the epsilons are.
         """
+        # should this method look for some kind of a guard that indicates 
+        # the end of the "natural" row?
+        # something that has a string representation of "empty string?"
+        # grrr, you get an extra separator if you pull this sort of
+        # nonsense.
+        # Either that or you need to do an output filter to strip it
+        # back out.
+        # what if an optional manifest gets put at the end of the first row?
+        # Really don't like the idea of tying those two together so closely.
+        # The guard is better, it's basically free, there only needs to be
+        # one of it, and it only needs to be stripped out if you put it in.
+        # still, it's a hack and I don't like the way it interferes with the
+        # purity of the archive
         if self.oindices is None:
             self.nobj = len(solution)
             self.oindices = range(self.nobj)
@@ -272,6 +312,39 @@ def eps_sort(tables, objectives, epsilons, **kwargs):
 
     archive = Archive(epsilons, objectives)
 
+    maximize = kwargs.get("maximize", None)False
+    minimize_objectives = objectives
+
+    # chain flip onto any other generators to augment rows with negated values
+    if kwargs.get("maximize_all", False):
+        tables = [flip(table, maximize_all=True) for table in tables]
+        # all of the objectives are now after the end of the row
+        # but we have a bootstrapping problem here -- we need to 
+        # push a solution into a phony archive to figure out how 
+        # big it is, so that we can create the real archive
+
+        # so here's what we're going to do: snarf one solution out of the 
+        # first table, push it into a phony archive, and make a new table
+        # that's just that solution
+
+        # it doesn't break contribution, since contribution has already
+        # happened at this point
+
+        # Wait, what if somebody wants to do contribution and maximize all
+        # objectives?  Oy.  Need to be aggressive about catching valueerrors?
+        # hmmm. Actually, what happens if you want to do contribution 
+        # without specifying objectives, period?  bollocks.  That's a bug.
+
+        # all this is to say that the lazy-objectives folks who specify 
+        # nothing make this whole project about 10x harder!
+
+    elif maximize is not None:
+        tables = [flip(table, columns=maximize) for table in tables]
+        # easier case, we know which columns get flipped, so we change 
+        # the indices in the list of the objectives
+
+
+    archive = Archive(epsilons, objectives)
     # for each file in argument list ...
     for counter in range(len(tables)):
         solutions = tables[counter]
@@ -363,6 +436,7 @@ def filter_input(rows, **kwargs):
                 raise
 
         if contribution is not None:
+            # uh-oh, what if they didn't specify objectives?
             row.append(str(contribution))
             if number:
                 row.append(str(counter))
@@ -380,6 +454,41 @@ def use_filter(args):
     if args.contribution:
         return True
     return False
+
+def flip(rows, **kwargs):
+    """
+    Append inverted values to each row in the input
+
+    Keyword arguments:
+    *columns*       which columns to invert, invert all if not specified
+    *maximize_all*  invert all columns if True
+    """
+    counter = -1
+    row = []
+    try:
+        columns = kwargs.get("columns", None)
+        if columns is not None:
+            import copy
+            for row in rows:
+                counter += 1
+                maxrow = copy.copy(row)
+                for cc in columns:
+                    maxrow.append(0.0 - float(maxrow[cc]))
+                yield maxrow
+        elif kwargs.get("maximize_all", True):
+            import copy
+            for row in rows:
+                counter += 1
+                maxrow = copy.copy(row)
+                maxrow.extend([0.0 - float(val) for val in row])
+                yield maxrow
+        else: # why are you using this function again?
+            for row in rows:
+                yield row
+    except ValueError as ve:
+        msg = "On row {0} of input: {1}, encountered error {2}".format(
+                    counter, row, ve)
+        raise SortInputError(msg)
 
 def get_args(argv):
     """ Get command line arguments """
@@ -433,8 +542,9 @@ def get_args(argv):
             cols.extend(indexrange)
         args.maximize = cols
 
-    if args.objectives is not None and args.maximize_all:
+    if args.maximize_all: # override args.maximize if maximizing all
         args.maximize = args.objectives
+        args.maximize_all = False
 
     if args.tabs:
         args.delimiter = "\t"
@@ -465,8 +575,8 @@ def cli(args):
 
     try:
         archive = eps_sort(tables, args.objectives, epsilons, 
-                           maximize=args.maximize, 
-                           maximize_all=args.maximize_all)
+                           maximize = args.maximize, 
+                           maximize_all = args.maximize_all)
     except SortInputError as sie:
         table = args.inputs[sie.table].name
         msg = str(sie).replace("input", table)
