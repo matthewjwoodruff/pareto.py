@@ -329,15 +329,20 @@ def eps_sort_solutions(tables, epsilons=None):
 
     return archive.tagalongs
 
-def attribution(stream, attribution):
+def attribution(stream, attribution, number=False):
     """
     extract lines from stream and augment with attribution
     """
-    linenumber = 0
-    for line in stream:
-        linenumber += 1
-        line = line.strip()
-        yield (line, [attribution, str(linenumber)])
+    if number:
+        linenumber = 0
+        for line in stream:
+            linenumber += 1
+            line = line.strip()
+            yield (line, [attribution, str(linenumber)])
+    else:
+        for line in stream:
+            line = line.strip()
+            yield (line, [attribution])
 
 def noattribution(stream):
     """
@@ -419,7 +424,8 @@ def maximize(solutions, mindices=None):
 def cli(args):
     """ command-line interface, execute the comparison """
     if args.contribution:
-        tables = [attribution(fp, fp.name) for fp in args.inputs]
+        tables = [attribution(fp, fp.name, args.line_number) 
+                  for fp in args.inputs]
     else:
         tables = [noattribution(fp) for fp in args.inputs]
 
