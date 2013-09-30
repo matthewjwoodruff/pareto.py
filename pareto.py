@@ -67,6 +67,10 @@ def get_args(argv):
                         help='objective columns (zero-indexed)')
     parser.add_argument('-e', '--epsilons', type=float, nargs='+',
                         help='epsilons, one per objective')
+    parser.add_argument('-m', '--maximize', type=intrange, nargs='+',
+                        help='objective columns to maximize')
+    parser.add_argument('-M', '--maximize-all', action="store_true",
+                        help='maximize all objectives')
     parser.add_argument('--output', type=argparse.FileType('w'),
                         default=sys.stdout,
                         help='output filename, default to standard output')
@@ -83,7 +87,7 @@ def get_args(argv):
                         help="skip blank lines")
     parser.add_argument("-c", "--comment", type=str, nargs="+", default=[],
                         help="skip lines starting with this character")
-    parser.add_argument("--header", type=int, default=0
+    parser.add_argument("--header", type=int, default=0,
                         help="number of header lines to skip")
     parser.add_argument("--contribution", action="store_true",
                         help="append filename where solution originated")
@@ -93,6 +97,7 @@ def get_args(argv):
     args = parser.parse_args(argv)
 
     args.objectives = rerange(args.objectives)
+    args.maximize = rerange(args.maximize)
 
     if args.tabs:
         args.delimiter = "\t"
@@ -201,7 +206,8 @@ class Archive(object):
         # return:   The candidate solution is dominated, stop comparing it to
         #           the archive, don't add it, immediately exit the method.
 
-        ebox = [math.floor(objectives[ii] / self.epsilons[ii]) for ii in self.itobj]
+        ebox = [math.floor(objectives[ii] / self.epsilons[ii]) 
+                for ii in self.itobj]
 
         asize = len(self.archive)
 
@@ -239,7 +245,8 @@ class Archive(object):
             # solutions are in the same box
             aobj = self.archive[ai]
             corner = [ebox[ii] * self.epsilons[ii] for ii in self.itobj]
-            sdist = sum([(objectives[ii] - corner[ii]) **2 for ii in self.itobj])
+            sdist = sum([(objectives[ii] - corner[ii]) **2 
+                         for ii in self.itobj])
             adist = sum([(aobj[ii] - corner[ii]) **2 for ii in self.itobj])
             if adist < sdist: # archive dominates
                 return
@@ -266,7 +273,7 @@ def noannotation(table):
     for row in table:
         yield (row, empty)
 
-def eps_sort(tables, objectives, epsilons, **kwargs):
+def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
     Perform an epsilon-nondominated sort
     tables: input data, must support row iteration
@@ -285,19 +292,19 @@ def eps_sort(tables, objectives, epsilons, **kwargs):
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
 
-    maximize = kwargs.get("maximize", None)
+    tomaximize = kwargs.get("maximize", None)
     maximize_all = kwargs.get("maximize_all", False)
 
-    if maximize is not None or maximize_all:
+    if tomaximize is not None or maximize_all:
         if objectives is None:
-            mindices = maximize
+            mindices = tomaximize
         elif maximize_all:
             mindices = None
         else:
-            mindices = [args.objectives.index(i) for i in args.maximize]
+            mindices = [objectives.index(i) for i in tomaximize]
         tables = [maximize(solutions, mindices) for solutions in tables]
 
-    tagalongs = eps_sort_solutions(tables, args.epsilons)
+    tagalongs = eps_sort_solutions(tables, epsilons)
 
     return tagalongs
 
@@ -329,7 +336,7 @@ def attribution(stream, attribution):
     linenumber = 0
     for line in stream:
         linenumber += 1
-        line = next(stream).strip()
+        line = line.strip()
         yield (line, [attribution, linenumber])
 
 def noattribution(stream):
@@ -338,7 +345,8 @@ def noattribution(stream):
     """
     empty = []
     for line in stream:
-        yield (next(stream).strip(), empty)
+        line = line.strip()
+        yield (line, empty)
 
 def filter_lines(annotatedlines, **kwargs):
     """
