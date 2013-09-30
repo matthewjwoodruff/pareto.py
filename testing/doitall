@@ -1,0 +1,44 @@
+printf "\ndoit10\n"
+sort ten.ref > c
+time ./doit10 $1
+sort ou10.txt | diff c -
+
+printf "\ndoit3\n"
+sort three.ref > a
+time ./doit3 $1
+sort ou3.txt | diff a -
+
+printf "\ncomment\n"
+time ./comment $1
+sort ou3.txt | diff a -
+
+printf "\nblank\n"
+time ./blank $1
+sort ou3.txt | diff a -
+
+printf "\nheader\n"
+time ./header $1
+sort ou3.txt | diff a -
+
+printf "\ncomment_blank_header\n"
+time ./comment_blank_header $1
+sort ou3.txt | diff a -
+
+printf "\ncontribution\n"
+time ./contribution $1
+sort contrib.ref > e
+sort ou3.txt | diff e -
+
+printf "\ntabs\n"
+time python${1} ../pareto.py --tabs in3_tabs.txt -o 27-29 -e 0.1 0.1 0.1 | sed -e "s/\\t/ /g" | sort | diff a -
+
+printf "\ntwo-objective contortions\n"
+time sed "s/ /\\t/" in2.txt | python ../pareto.py - --tabs -M | wc -l
+time python ../pareto.py in2.txt --delimiter=" " -m 0 1 | wc -l
+
+printf "\nWrong number of epsilons, should fail informatively...\n"
+python ../pareto.py in2.txt -m 0 1 -e 0.1
+python ../pareto.py in2.txt -e 0.1
+
+printf "\nWrong number of objectives, should fail informatively...\n"
+python ../pareto.py in2.txt -m 0-2
