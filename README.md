@@ -2,7 +2,7 @@
 ###Nondominated sorting for multi-objective problems
 by [matthewjwoodruff](https://github.com/matthewjwoodruff) and [jdherman](https://github.com/jdherman)
 
-`pareto.py` implements an epsilon-nondominated sort in pure Python.  It sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set.  Solutions can contain columns other than objectives, which will be carried through, unsorted, to the output.  By default, output rows are reproduced verbatim from input.  `pareto.py` assumes that all objectives are to be minimized.
+`pareto.py` implements an epsilon-nondominated sort in pure Python.  It sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set.  Solutions can contain columns other than objectives, which will be carried through, unsorted, to the output.  By default, output rows are reproduced verbatim from input.  `pareto.py` supports both minimization and maximization, although it assumes minimization.
 
 This sort assumes a desired output resolution (epsilons).  If a strict nondominated sort is required, it can be approximated by setting epsilons arbitrarily small (within reason -- floating-point division is involved here.)  The default epsilon resolution of 1e-9 will effectively result in a strict nondominated sort in many cases.
 
@@ -23,6 +23,7 @@ python pareto.py \
            my_file_* \
            -o 3-5 \
            -e 0.01 0.05 0.1 \
+           -m 3 \
            --output my_pareto_set.txt \
            --delimiter=' ' \
            --print-only-objectives \
@@ -41,13 +42,18 @@ python pareto.py \
 * `-o, --objectives`: Optional. A list of columns of the input files to sort (zero-indexed), separated by spaces. If not given, all columns of the input files will be sorted.  Ranges and individual column numbers may be mixed, e.g. `-o 0 3-7 12`
 
 * `-e, --epsilons`: Optional. A list of epsilon (precision) values corresponding to each objective. If not given, all objectives will use a precision of `1e-9`. 
+
+* `-m, --maximize`: Optional. A list of objective columns to maximize.  By default, `pareto.py` minimizes all objectives.
+
+* `-M, --maximize-all`: Optional.  Maximize all objectives.  Overrides `-m`.
  
 * `-d, --delimiter`: Optional. Input file delimiter. Common choices:
 
   * Space-delimited (default): `--delimiter=' '`
   * Comma-delimited: `--delimiter=','`
+  * Tab: `--tabs` (see below)
 
-* `--tab`: Use tabs as delimiter.  Provided for convenience because tabs can be difficult to escape properly at the command line. 
+* `--tabs`: Use tabs as delimiter.  Provided for convenience because tabs can be difficult to escape properly at the command line. 
 
 * `--print-only-objectives`: Optional. Include this flag to print only the objective values in the Pareto set. If this flag is not included, all columns of the input will be printed to the output, even if they were not sorted.
 
@@ -113,7 +119,10 @@ nondominated = pareto.eps_sort([table.itertuples(False)], [3, 4, 5], [1, 0.1, 3]
 ```
 
 ### Note for PyPy users
-`pareto.py` works with PyPy.  Consistent with PyPy's reputation for speed, `pareto.py` runs several times faster than CPython.
+`pareto.py` works with PyPy.  Consistent with PyPy's reputation for speed, `pareto.py` runs several times faster than CPython.  Informal tests show a speedup of 7x on large data sets relative to CPython 2.7.5, although this is highly dependent on the particulars of the test system and the data set.
+
+### Note for Python3 users
+`pareto.py` works with Python3.2 and up.  However, informal performance comparisons show a speed regression of about 30% for CPython 3.3.2 versus 2.7.5, possibly because we're being naive about string handling.
 
 ### License
 Copyright (C) 2013 Matt Woodruff and Jon Herman.
