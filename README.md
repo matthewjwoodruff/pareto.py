@@ -67,6 +67,7 @@ python pareto.py \
 
 * `--line-number`: Optional.  Report line number in file of origin when appending contribution.
 
+* `--reverse-column-indices`: Optional.  Count column indices from the end of the row rather than from the beginning.  This affects the behavior of `-o`, `-e`, and `-m`.  `-o` and `-m` will count from the end of the row, which reverses the order of the objectives from the point of view of `-e`.  So if you specify `-o 0-2 --reverse-column-indices -e 0.1 0.2 0.2 -m 0`, the *last* column of each row gets maximized with epsilon 0.1, while the two columns before it get minimized with epsilon 0.2.  If you want to specify epsilons in forward order, switch the direction of the index range: `-o 2-0 --reverse-column-indices -e 0.2 0.2 0.1 -m 0` has the same effect.
 
 ### What is this?
 For more information, please consult the following references:
