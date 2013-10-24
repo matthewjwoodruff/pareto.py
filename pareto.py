@@ -148,8 +148,10 @@ def intrange(arg):
 
     if second is None:
         return [first]
-    else:
+    elif second - first >= 0:
         return range(first, second+1)
+    else:
+        return range(first, second-1, -1)
 
 class SortParameterError(Exception): pass
 
