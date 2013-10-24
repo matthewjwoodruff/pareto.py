@@ -105,9 +105,11 @@ def get_args(argv):
     args = parser.parse_args(argv)
 
     args.objectives = rerange(args.objectives)
+    args.maximize = rerange(args.maximize)
+
     if args.reverse_column_indices:
         args.objectives = [-1 - ob for ob in args.objectives]
-    args.maximize = rerange(args.maximize)
+        args.maximize = [-1 -ob for ob in args.maximize]
 
     if args.tabs:
         args.delimiter = "\t"
