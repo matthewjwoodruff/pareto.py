@@ -94,9 +94,19 @@ def get_args(argv):
     parser.add_argument("--line-number", action="store_true",
                         help="also append line number to solution if "\
                              "--contribution is used.")
+    parser.add_argument("--reverse-column-indices", action='store_true',
+                        default=False, help='Reverse the order of column '\
+                        'indices.  May be useful if your objectives are '\
+                        'at the end of a row of unknown length.  Make sure '\
+                        '-e and -m are consistent with the order you '\
+                        'specify.')
+
+
     args = parser.parse_args(argv)
 
     args.objectives = rerange(args.objectives)
+    if args.reverse_column_indices:
+        args.objectives = [-1 - ob for ob in args.objectives]
     args.maximize = rerange(args.maximize)
 
     if args.tabs:
