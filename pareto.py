@@ -108,8 +108,10 @@ def get_args(argv):
     args.maximize = rerange(args.maximize)
 
     if args.reverse_column_indices:
-        args.objectives = [-1 - ob for ob in args.objectives]
-        args.maximize = [-1 -ob for ob in args.maximize]
+        if args.objectives is not None:
+            args.objectives = [-1 - ob for ob in args.objectives]
+        if args.maximize is not None:
+            args.maximize = [-1 -ob for ob in args.maximize]
 
     if args.tabs:
         args.delimiter = "\t"
