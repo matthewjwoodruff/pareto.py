@@ -1,6 +1,6 @@
 ## Installing `pareto.py`
 
-`pareto.py` uses setuptools.
+`pareto.py` uses `setuptools`.
 To install, execute `setup.py`:
 
 ```
