@@ -325,7 +325,7 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
 
     Duplicates some of cli() for a programmatic interface
     """
-    if kwargs.get(annotate, False) is True:
+    if kwargs.get("annotate", False) is True:
         tables = [numbering(table, ii) for table, ii in zip(tables, numbers())]
     else:
         tables = [noannotation(table) for table in tables]
