@@ -51,7 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
-__version__ = "1.1.0"
+__version__ = "1.1.0-1"
 
 import sys
 import math
@@ -325,7 +325,7 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
 
     Duplicates some of cli() for a programmatic interface
     """
-    if kwargs.get(annotate, False) is True:
+    if kwargs.get("annotate", False) is True:
         tables = [numbering(table, ii) for table, ii in zip(tables, numbers())]
     else:
         tables = [noannotation(table) for table in tables]
