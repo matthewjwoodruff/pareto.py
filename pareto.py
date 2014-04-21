@@ -289,6 +289,25 @@ def noannotation(table):
     for row in table:
         yield (row, empty)
 
+def numbering(table, tag):
+    """
+    annotate each row in the table with tag and line number
+    """
+    linenumber = 0
+    for row in table:
+        yield (row, [tag, linenumber])
+        linenumber += 1
+
+def numbers():
+    """
+    generator function yielding the numbers 0, 1, 2...
+    (Is there an easier way to express this?)
+    """
+    ii = 0
+    while True:
+        yield ii
+        ii += 1
+
 def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
     Perform an epsilon-nondominated sort
@@ -300,9 +319,13 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     Keyword arguments:
     *maximize*      columns to maximize
     *maximize_all*  maximize all columns
+    *annnotate*     True: annotate the resulting rows with (table number, row number)
+                    not True: no annotation
 
     Duplicates some of cli() for a programmatic interface
     """
+    if kwargs.get(annotate, False) is True:
+        tables = [numbering(table, ii) for table, ii in zip(tables, numbers())]
     tables = [noannotation(table) for table in tables]
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
