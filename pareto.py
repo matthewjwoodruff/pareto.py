@@ -51,6 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
+__version__ = "1.1.0"
 
 import sys
 import math
@@ -94,10 +95,24 @@ def get_args(argv):
     parser.add_argument("--line-number", action="store_true",
                         help="also append line number to solution if "\
                              "--contribution is used.")
+    parser.add_argument("--reverse-column-indices", action='store_true',
+                        default=False, help='Reverse the order of column '\
+                        'indices.  May be useful if your objectives are '\
+                        'at the end of a row of unknown length.  Make sure '\
+                        '-e and -m are consistent with the order you '\
+                        'specify.')
+
+
     args = parser.parse_args(argv)
 
     args.objectives = rerange(args.objectives)
     args.maximize = rerange(args.maximize)
+
+    if args.reverse_column_indices:
+        if args.objectives is not None:
+            args.objectives = [-1 - ob for ob in args.objectives]
+        if args.maximize is not None:
+            args.maximize = [-1 -ob for ob in args.maximize]
 
     if args.tabs:
         args.delimiter = "\t"
@@ -148,8 +163,10 @@ def intrange(arg):
 
     if second is None:
         return [first]
-    else:
+    elif second - first >= 0:
         return range(first, second+1)
+    else:
+        return range(first, second-1, -1)
 
 class SortParameterError(Exception): pass
 
@@ -273,6 +290,25 @@ def noannotation(table):
     for row in table:
         yield (row, empty)
 
+def numbering(table, tag):
+    """
+    annotate each row in the table with tag and line number
+    """
+    linenumber = 0
+    for row in table:
+        yield (row, [tag, linenumber])
+        linenumber += 1
+
+def numbers():
+    """
+    generator function yielding the numbers 0, 1, 2...
+    (Is there an easier way to express this?)
+    """
+    ii = 0
+    while True:
+        yield ii
+        ii += 1
+
 def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
     Perform an epsilon-nondominated sort
@@ -284,10 +320,15 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     Keyword arguments:
     *maximize*      columns to maximize
     *maximize_all*  maximize all columns
+    *annnotate*     True: annotate the resulting rows with (table number, row number)
+                    not True: no annotation
 
     Duplicates some of cli() for a programmatic interface
     """
-    tables = [noannotation(table) for table in tables]
+    if kwargs.get(annotate, False) is True:
+        tables = [numbering(table, ii) for table, ii in zip(tables, numbers())]
+    else:
+        tables = [noannotation(table) for table in tables]
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
 
