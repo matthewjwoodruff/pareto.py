@@ -51,7 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
-__version__ = "1.1.0-3"
+__version__ = "1.1.1-0"
 
 import sys
 import math
@@ -398,37 +398,29 @@ def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
 
     masks = []
     if singletable is True:
-        mask = []
-        gap = 0
-        last = -1
-        for row in tagalongs:
-            number = row[-1]
-            gap = number - last - 1
-            last = number
-            mask.extend([False] * gap)
-            mask.append(True)
-        gap = len(tables) - number - 1
-        mask.extend([False] * gap)
-        masks = mask
-    else:
-        gaps = []
-        lasts = []
-        numbers = []
-        for table in tables:
-            masks.append(list())
-            gaps.append(0)
-            lasts.append(-1)
-            numbers.append(0)
-        for row in tagalongs:
-            tab = row[-2]
-            numbers[tab] = row[-1]
-            gaps[tab] = numbers[tab] - lasts[tab] - 1
-            lasts[tab] = numbers[tab]
-            masks[tab].extend([False] * gaps[tab])
-            masks[tab].append(True)
-        for tab in range(len(tables)):
-            gaps[tab] = len(tables[tab]) - numbers[tab] - 1
-            masks[tab].extend([False] * gaps[tab])
+        tables = [tables]
+    gaps = []
+    lasts = []
+    numbers = []
+    for table in tables:
+        masks.append(list())
+        gaps.append(0)
+        lasts.append(-1)
+        numbers.append(0)
+    for row in tagalongs:
+        tab = row[-2]
+        numbers[tab] = row[-1]
+        gaps[tab] = numbers[tab] - lasts[tab] - 1
+        lasts[tab] = numbers[tab]
+        masks[tab].extend([False] * gaps[tab])
+        masks[tab].append(True)
+    for tab in range(len(tables)):
+        gaps[tab] = len(tables[tab]) - numbers[tab] - 1
+        masks[tab].extend([False] * gaps[tab])
+
+    if singletable is True:
+        masks = masks[0]
+
     return masks
 
 def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
