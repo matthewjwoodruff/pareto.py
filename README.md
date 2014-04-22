@@ -16,6 +16,8 @@ Data after epsilon-nondominated sort.  Red epsilon-boxes and all of the solution
 
 [This picture](https://raw.github.com/jdherman/pareto.py/picture/variety.png) shows the same data sorted at a variety of epsilon resolutions.  (Note that there is no requirement that epsilons be the same for each objective.  Epsilons for f1 and f2 are set equal for illustration only.)
 
+[Release Notes](RELEASES.md)
+
 ### Usage
 Example usage for a group of input files beginning with `my_file_`:
 ```
