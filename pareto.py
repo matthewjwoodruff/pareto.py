@@ -51,7 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
-__version__ = "1.1.0-1"
+__version__ = "1.1.0-3"
 
 import sys
 import math
@@ -292,7 +292,10 @@ def noannotation(table):
 
 def numbering(table, tag):
     """
+    generator function 
     annotate each row in the table with tag and line number
+    table: iterable, but probably a list of lists
+    tag: anything, but probably a string or an integer
     """
     linenumber = 0
     for row in table:
@@ -309,10 +312,68 @@ def numbers():
         yield ii
         ii += 1
 
+def as_table(table):
+    """
+    try to convert a single table to something row-iterable
+    if it's a generator, assume it's ok
+    table: something tabular
+    """
+    try: # is it a Pandas DataFrame?
+        mat = table.as_matrix()
+    except AttributeError:
+        mat = table
+
+    try: # is it a double-subscriptable NumPy ndarray?
+        mat.tolist
+        mat[0].tolist
+        mat[0][0]
+        rowit = (x.tolist() for x in mat)
+    except (AttributeError, IndexError): 
+        rowit = table
+
+    try: # is it a generator?
+        rowit.send
+        rowit.close
+        return rowit
+    except AttributeError:
+        pass
+
+    try: # is it double-subscriptable and not strings?
+        rowit[0][0]
+        try:
+            rowit[0].capitalize
+            raise TypeError()
+        except AttributeError:
+            # copy the data as needed
+            return ([v for v in r] for r in rowit)
+    except (AttributeError, IndexError):
+        raise TypeError()
+
+    raise TypeError()
+
+def as_tables(tables):
+    """
+    generator function yielding each table as something row-iterable
+    """
+    msg = "Failed to make input {0} row-iterable"
+    ii = 0
+
+    # process a list of tables
+    for table in tables:
+        try:
+            tab = as_table(table)
+        except TypeError:
+            raise TypeError(msg.format(ii))
+        
+        yield tab
+        ii += 1
+
 def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
     Perform an epsilon-nondominated sort
-    tables: input data, must support row iteration
+    tables: input data, must be iterable
+            each table can be a DataFrame, an ndarray, a list of lists.
+            A single table is also an acceptable input.
     objectives: list of column indices in which objectives can be found,
                 if None default to all columns
     epsilons: list of epsilons for the sort, if None default to 1e-9
@@ -320,15 +381,22 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     Keyword arguments:
     *maximize*      columns to maximize
     *maximize_all*  maximize all columns
-    *annnotate*     True: annotate the resulting rows with (table number, row number)
+    *annnotate*     True: annotate the resulting rows 
+                          with (table number, row number)
                     not True: no annotation
 
     Duplicates some of cli() for a programmatic interface
     """
+    try:
+        tables = [x for x in as_tables(tables)]
+    except TypeError:
+        tables = [x for x in as_tables([tables])]
+
     if kwargs.get("annotate", False) is True:
         tables = [numbering(table, ii) for table, ii in zip(tables, numbers())]
     else:
         tables = [noannotation(table) for table in tables]
+
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
 
@@ -344,6 +412,7 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
             mindices = [objectives.index(i) for i in tomaximize]
         tables = [maximize(solutions, mindices) for solutions in tables]
 
+    # tagalongs is the *raw* data
     tagalongs = eps_sort_solutions(tables, epsilons)
 
     return tagalongs
