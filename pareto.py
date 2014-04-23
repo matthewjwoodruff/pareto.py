@@ -406,7 +406,7 @@ def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
         masks.append(list())
         gaps.append(0)
         lasts.append(-1)
-        numbers.append(0)
+        numbers.append(-1)
     for row in tagalongs:
         tab = row[-2]
         numbers[tab] = row[-1]
