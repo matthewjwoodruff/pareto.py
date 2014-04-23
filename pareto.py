@@ -51,7 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
-__version__ = "1.1.1-2"
+__version__ = "1.1.1-3"
 
 import sys
 import math
