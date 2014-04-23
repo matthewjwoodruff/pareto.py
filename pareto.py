@@ -368,13 +368,9 @@ def as_tables(tables):
         yield tab
         ii += 1
 
-def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
+def full_rank_sort(tables, objectives=None, epsilons=None, **kwargs):
     """
-    wrapper to eps_sort that returns a list of lists indicating which
-    rows from each table were nondominated
-    This function will fail if you can't call len() on each table.
-
-    tables: input data, must be iterable
+    tables: input data, must be iterable and support len()
             each table can be a DataFrame, an ndarray, a list of lists.
             A single table is also an acceptable input.
     objectives: list of column indices in which objectives can be found,
@@ -384,6 +380,34 @@ def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
     Keyword arguments:
     *maximize*      columns to maximize
     *maximize_all*  maximize all columns
+    """
+
+    exclude = flag_nondominated(tables, objectives, epsilons, **kwargs)
+    rank = 0
+    ranks = [
+
+    kwargs
+
+
+
+def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
+    """
+    wrapper to eps_sort that returns a list of lists indicating which
+    rows from each table were nondominated
+    This function will fail if you can't call len() on each table.
+
+    tables: input data, must be iterable and support len()
+            each table can be a DataFrame, an ndarray, a list of lists.
+            A single table is also an acceptable input.
+    objectives: list of column indices in which objectives can be found,
+                if None default to all columns
+    epsilons: list of epsilons for the sort, if None default to 1e-9
+
+    Keyword arguments:
+    *maximize*      columns to maximize
+    *maximize_all*  maximize all columns
+    *exclude*       a list or list of lists of booleans indicating which
+                    rows to exclude
     """
     kwargs.update({"attribution": True})
 
@@ -438,13 +462,18 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
     *maximize*      columns to maximize
     *maximize_all*  maximize all columns
     *attribution*   True: add table number, row number to rows
+    *exclude*       list (or list of lists) of booleans indicating which
+                    rows to exclude
 
     Duplicates some of cli() for a programmatic interface
     """
+    exclude = kwargs.get("exclude", None)
     try:
         tables = [x for x in as_tables(tables)]
     except TypeError:
         tables = [x for x in as_tables([tables])]
+        if exclude is not None:
+            exclude = [exclude]
 
     attribution = kwargs.get("attribution")
 
@@ -455,6 +484,10 @@ def eps_sort(tables, objectives=None, epsilons=None, **kwargs):
 
     tables = [withobjectives(annotatedrows, objectives)
               for annotatedrows in tables]
+
+    if exclude is not None:
+        tables = [(r for r, x in zip(table, ex) if not x)
+                  for table, ex in zip(tables, exclude)]
 
     tomaximize = kwargs.get("maximize", None)
     maximize_all = kwargs.get("maximize_all", False)
