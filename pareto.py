@@ -51,7 +51,7 @@ For a fast nondominated sort:
     pages="182--197"
 }
 """
-__version__ = "1.1.1-2"
+__version__ = "1.1.1-3"
 
 import sys
 import math
@@ -406,7 +406,7 @@ def flag_nondominated(tables, objectives=None, epsilons=None, **kwargs):
         masks.append(list())
         gaps.append(0)
         lasts.append(-1)
-        numbers.append(0)
+        numbers.append(-1)
     for row in tagalongs:
         tab = row[-2]
         numbers[tab] = row[-1]
