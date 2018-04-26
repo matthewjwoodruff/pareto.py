@@ -118,7 +118,7 @@ import pandas
 import pareto
 
 table = pandas.read_table("datafile.txt")
-nondominated = pareto.eps_sort([table.itertuples(False)], [3, 4, 5], [1, 0.1, 3])
+nondominated = pareto.eps_sort([list(table.itertuples(False))], [3, 4, 5], [1, 0.1, 3])
 ```
 
 ### Note for PyPy users
