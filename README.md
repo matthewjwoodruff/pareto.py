@@ -122,7 +122,7 @@ nondominated = pareto.eps_sort([list(table.itertuples(False))], [3, 4, 5], [1, 0
 ```
 
 ### Note for PyPy users
-Congratulations!  You're using a blazing fast Python interpreter.  `pareto.py` works great with PyPy.  A recent comparison on a 692M file with 10 objectives, 27 other columns, and a reference set of 507 solutions, ran in 23.5s using pypy (version 2.1.0), versus 8m29s with CPython 2.7.5.  (Disclaimer: many factors affect performance.  This is an anecdotal result.)
+Congratulations!  You're using a blazing fast Python interpreter.  `pareto.py` works great with PyPy.  A comparison on a 692M file with 10 objectives, 27 other columns, and a reference set of 507 solutions, ran in 23.5s using pypy (version 2.1.0), versus 8m29s with CPython 2.7.5.  (Disclaimer: many factors affect performance.  This is an anecdotal result.)
 
 ### Note for Python3 users
 `pareto.py` works with Python3.2 and up.  However, informal performance comparisons show a speed regression of about 30% for CPython 3.3.2 versus 2.7.5, possibly because we're being naive about string handling.
