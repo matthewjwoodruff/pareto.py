@@ -1,5 +1,5 @@
-##pareto.py
-###Nondominated sorting for multi-objective problems
+## pareto.py
+### Nondominated sorting for multi-objective problems
 by [matthewjwoodruff](https://github.com/matthewjwoodruff) and [jdherman](https://github.com/jdherman)
 
 `pareto.py` implements an epsilon-nondominated sort in pure Python.  It sorts one or more files of solutions into the Pareto-efficient (or "nondominated") set.  Solutions can contain columns other than objectives, which will be carried through, unsorted, to the output.  By default, output rows are reproduced verbatim from input.  `pareto.py` supports both minimization and maximization, although it assumes minimization.
